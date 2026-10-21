@@ -77,6 +77,8 @@ pip install -r requirements.txt
 
 > 权重和演示视频已经随仓库提供，不需要额外下载。只检测到一块屏幕时，两个窗口会左右并排（各占一半）；接上外接显示器后会自动一屏一个。
 
+用完后双击 `stop.bat` 可彻底关闭隐藏的后台服务；直接关掉两个应用窗口不会停止它。
+
 ### 手动启动（Windows / macOS / Linux）
 
 ```bash
@@ -333,6 +335,7 @@ yolo26-neural-scope/
 ├─ weights/             YOLO26n-Pose + EdgeFace-S ONNX（各自许可，见 weights/README.md）
 ├─ docs/screenshots/    README 截图
 ├─ run.ps1 / start.bat  Windows 双窗启动器
+├─ stop.ps1 / stop.bat  Windows 一键关闭后台
 ├─ requirements.txt     Python 依赖（固定版本）
 ├─ LICENSE              AGPL-3.0
 ├─ NOTICE               版权与第三方权重提示

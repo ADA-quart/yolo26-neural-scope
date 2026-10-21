@@ -66,6 +66,9 @@ windows: `/live` on the left and `/neural` on the right. On a single monitor
 the two windows are tiled side by side; with a second monitor each window gets
 its own display.
 
+To stop the hidden backend, double-click `stop.bat`; closing the app windows
+does not stop it.
+
 Manual mode (any OS):
 
 ```bash

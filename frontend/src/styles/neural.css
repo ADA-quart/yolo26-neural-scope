@@ -2710,6 +2710,18 @@
     overflow: visible;
   }
 
+  .n-grid > .n-stage {
+    order: -2;
+  }
+
+  .n-grid > .n-col-left {
+    order: -1;
+  }
+
+  .n-grid > .n-col-right {
+    order: 0;
+  }
+
   .n-col,
   .n-stage {
     overflow: visible;
@@ -2740,6 +2752,18 @@
 
   .n-rail-hint {
     display: none;
+  }
+}
+
+@media (min-width: 640px) and (max-width: 1080px) {
+  .n-stage-body {
+    grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+  }
+
+  .n-map-wrap {
+    width: 100%;
+    max-width: none;
+    align-self: start;
   }
 }
 

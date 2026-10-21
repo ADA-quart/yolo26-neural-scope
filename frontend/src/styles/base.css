@@ -324,6 +324,7 @@ a {
   display: inline-flex;
   align-items: center;
   gap: 8px;
+  flex: none;
   height: 30px;
   padding: 0 11px;
   border-radius: 99px;
@@ -333,6 +334,7 @@ a {
   font-size: 10.5px;
   letter-spacing: 0.06em;
   color: var(--muted);
+  white-space: nowrap;
 }
 
 .conn-pill.on {

@@ -263,17 +263,20 @@ if FRONTEND_DIST.exists():
     if assets_dir.exists():
         app.mount("/assets", StaticFiles(directory=assets_dir), name="frontend-assets")
 
+    def index_response() -> FileResponse:
+        return FileResponse(FRONTEND_DIST / "index.html", headers={"Cache-Control": "no-cache"})
+
     @app.get("/live")
     def live_page() -> FileResponse:
-        return FileResponse(FRONTEND_DIST / "index.html")
+        return index_response()
 
     @app.get("/neural")
     def neural_page() -> FileResponse:
-        return FileResponse(FRONTEND_DIST / "index.html")
+        return index_response()
 
     @app.get("/")
     def index_page() -> FileResponse:
-        return FileResponse(FRONTEND_DIST / "index.html")
+        return index_response()
 
 
 state_dir = ROOT / "state"
