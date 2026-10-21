@@ -38,6 +38,7 @@
 - [项目结构](#项目结构)
 - [性能与硬件](#性能与硬件)
 - [已知限制与边界](#已知限制与边界)
+- [相关项目与定位](#相关项目与定位)
 - [许可证（重要）](#许可证重要)
 - [致谢与参考](#致谢与参考)
 
@@ -363,6 +364,34 @@ yolo26-neural-scope/
 - **双窗启动器只针对 Windows。** macOS/Linux 用手动命令 + 两个浏览器窗口。
 - **演示素材有肖像。** 请不要把示例视频用于监控、身份画像或其他侵犯隐私的场景；注册真实人脸前请获得本人同意。
 - **许可证有边界。** 代码是 AGPL-3.0；内置 EdgeFace 权重是非商业的 CC BY-NC-SA 4.0；YOLO26 权重是 AGPL-3.0。详见下一节。
+
+---
+
+## 相关项目与定位
+
+这个方向已经有不少优秀的开源工作，但侧重点不同：
+
+| 项目 | 适合看什么 | 与本项目的差异 |
+|---|---|---|
+| [CNN Explainer](https://github.com/poloclub/cnn-explainer) | 在浏览器里逐层观察一个小型 CNN 的卷积、激活和分类 | 使用教学用 TinyVGG 和示例输入，不接 YOLO26 / 摄像头，也没有检测头和身份识别 |
+| [Netron](https://github.com/lutzroeder/netron) | 打开模型文件，查看静态计算图和层结构 | 不运行推理，不显示真实激活值 |
+| [RT-CNN-Vis](https://github.com/cyberneuron/RT-CNN-Vis) | 从视频流实时查看 Keras 模型各层激活图 | 2019 年的 Docker/Linux 工具，面向通用 Keras 模型；没有 YOLO26、Pose 头或教学文案 |
+| [darknet-vis](https://github.com/xueeinstein/darknet-vis) | 查看 YOLO 预测阶段的 objectness / 类别网格 | YOLOv2 时代实现，输出静态图片，不是逐层特征图 |
+| [YOLOv5-Grad-CAM](https://github.com/pooya-mohammadi/yolov5-gradcam) | 用 Grad-CAM 看 YOLOv5 某些层关注哪里 | 离线 Notebook，得到的是热力图，不是整层特征图和卷积乘加过程 |
+| [YOLO Architecture Visualizer](https://github.com/zhanghuiwan/yolo-arch-visualizer) | 交互查看 YOLO26 等模型的 YAML 架构、模块和 shape | 只画架构，不加载权重、不跑真实前向 |
+| [Vision Studio](https://github.com/misaka-ning/vision-studio) | 本地 YOLO 推理，加模型结构图、层级树和参数表 | Qt 桌面应用；结构可视化不等于中间层激活可视化 |
+| [YOLO Vision Studio](https://github.com/aparsoft/yolo-streamlit-detection-tracking) | YOLO26 检测 / 分割 / Pose / 跟踪的推理界面 | 只展示最终检测结果，不拆开网络内部 |
+
+（星标和功能会变化，以上只描述写作时的公开能力。）
+
+本项目的差异不在“又一个检测 UI”，而在组合：
+
+- **同一次真实前向**里同时取 23 张中间层特征图、7 组卷积乘加过程和 Pose 头候选；
+- 用 **YOLO26n-Pose**，把“人物置信度 × 面部关键点置信度”拆成可核对的人脸置信度，并接上身份比对；
+- 以 **双窗口 + 暂停/单步/最佳帧定格** 组织课堂讲解，而不是一次性截图或 Notebook；
+- UI 全部在浏览器里运行，Windows 可一键启动。
+
+如果你主要想看模型结构，Netron 或 YOLO Architecture Visualizer 更合适；如果只想做检测/跟踪，YOLO Vision Studio 更直接。神经显微镜解决的是另一个问题：**一次前向到底在每一层看到了什么，最后又是怎么变成答案的。**
 
 ---
 

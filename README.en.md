@@ -109,6 +109,25 @@ Key ideas:
   deliberate engineering trade-off: 23 maps + 7 microscopes + JPEG encoding
   are expensive. The left window keeps running at video rate.
 
+## Related work
+
+Several excellent open-source projects cover adjacent ground, with different goals:
+
+| Project | What it shows | How this project differs |
+|---|---|---|
+| [CNN Explainer](https://github.com/poloclub/cnn-explainer) | Layer-by-layer convolution, activations and classification for a small CNN in the browser | Uses a teaching TinyVGG and sample inputs; no YOLO26, live camera, detection head or identity |
+| [Netron](https://github.com/lutzroeder/netron) | Static architecture graphs from model files | Does not run inference or show real activations |
+| [RT-CNN-Vis](https://github.com/cyberneuron/RT-CNN-Vis) | Real-time activation maps for Keras models from a video stream | A 2019 Docker/Linux tool for generic Keras models; no YOLO26, pose head or teaching copy |
+| [darknet-vis](https://github.com/xueeinstein/darknet-vis) | YOLO objectness / class grids at prediction time | YOLOv2-era C implementation; static images, not per-layer maps |
+| [YOLOv5-Grad-CAM](https://github.com/pooya-mohammadi/yolov5-gradcam) | Grad-CAM heatmaps for selected YOLOv5 layers | Offline notebooks; heatmaps rather than full layer maps and multiply-accumulate steps |
+| [YOLO Architecture Visualizer](https://github.com/zhanghuiwan/yolo-arch-visualizer) | Interactive YAML architecture, modules and shapes for YOLO26 and earlier models | Architecture only; no weights, inference or activations |
+| [Vision Studio](https://github.com/misaka-ning/vision-studio) | Local YOLO inference plus model graph, layer tree and parameter table | Qt desktop app; structure visualization is not activation visualization |
+| [YOLO Vision Studio](https://github.com/aparsoft/yolo-streamlit-detection-tracking) | YOLO26 detection / segmentation / pose / tracking UI | Shows final results only, not the internals |
+
+Stars and features change; this table describes public capabilities at the time of writing.
+
+The differentiator is the combination: **one real forward pass** feeding 23 intermediate feature maps, seven convolution multiply-accumulate views and the pose head; a face confidence formula derived from YOLO26 pose keypoints; and a dual-window, pause/step/best-frame workflow for teaching. If you only need model structure, Netron or YOLO Architecture Visualizer is a better fit; if you only need detection or tracking, YOLO Vision Studio is more direct. This project answers a different question: **what does one forward pass see at each layer, and how does that become the final answer?**
+
 ## License
 
 **Code: AGPL-3.0.** The project uses and redistributes Ultralytics YOLO26
