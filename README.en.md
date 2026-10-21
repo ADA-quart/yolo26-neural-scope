@@ -62,7 +62,9 @@ pip install -r requirements.txt
 ```
 
 The launcher builds the frontend, starts the backend and opens two app
-windows: `/live` on the left and `/neural` on the right.
+windows: `/live` on the left and `/neural` on the right. On a single monitor
+the two windows are tiled side by side; with a second monitor each window gets
+its own display.
 
 Manual mode (any OS):
 

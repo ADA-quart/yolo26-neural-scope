@@ -135,23 +135,33 @@ public class YoloWin32 {
 }
 "@
 
-function Find-AppWindow([string]$Needle) {
-  return Get-Process -Name msedge, chrome -ErrorAction SilentlyContinue |
-    Where-Object { $_.MainWindowHandle -ne 0 -and $_.MainWindowTitle -like "*$Needle*" } |
-    Select-Object -First 1
+function Find-AppWindow([string]$Needle, [string]$ProfileDir = "") {
+  $candidates = Get-Process -Name msedge, chrome -ErrorAction SilentlyContinue |
+    Where-Object {
+      $_.MainWindowHandle -ne 0 -and
+      $_.MainWindowTitle -like "YOLO26*$Needle*"
+    }
+  if (-not $ProfileDir) { return $candidates | Select-Object -First 1 }
+  foreach ($process in $candidates) {
+    $commandLine = (Get-CimInstance Win32_Process -Filter "ProcessId = $($process.Id)" -ErrorAction SilentlyContinue).CommandLine
+    if ($commandLine -and ($commandLine -replace '"', '') -like "*--user-data-dir=$ProfileDir*") {
+      return $process
+    }
+  }
+  return $null
 }
 
-function Place-Window([string]$Needle, $Rect) {
-  $process = Find-AppWindow $Needle
+function Place-Window([string]$Needle, $Rect, [string]$ProfileDir = "") {
+  $process = Find-AppWindow $Needle $ProfileDir
   if (-not $process) { return $false }
   [YoloWin32]::MoveWindow($process.MainWindowHandle, $Rect.X, $Rect.Y, $Rect.Width, $Rect.Height, $true) | Out-Null
   return $true
 }
 
-function Wait-AppWindow([string]$Needle, [int]$TimeoutMs = 10000) {
+function Wait-AppWindow([string]$Needle, [int]$TimeoutMs = 10000, [string]$ProfileDir = "") {
   $deadline = (Get-Date).AddMilliseconds($TimeoutMs)
   while ((Get-Date) -lt $deadline) {
-    $process = Find-AppWindow $Needle
+    $process = Find-AppWindow $Needle $ProfileDir
     if ($process) { return $process }
     Start-Sleep -Milliseconds 300
   }
@@ -159,7 +169,7 @@ function Wait-AppWindow([string]$Needle, [int]$TimeoutMs = 10000) {
 }
 
 function Open-AppWindow([string]$Browser, [string]$Url, $Rect, [string]$ProfileDir, [string]$Needle) {
-  if (Place-Window $Needle $Rect) {
+  if (Place-Window $Needle $Rect $ProfileDir) {
     Say "复用已打开的窗口：$Needle"
     return $true
   }
@@ -176,7 +186,7 @@ function Open-AppWindow([string]$Browser, [string]$Url, $Rect, [string]$ProfileD
   )
   for ($attempt = 1; $attempt -le 3; $attempt++) {
     Start-Process -FilePath $Browser -ArgumentList $arguments | Out-Null
-    if (Wait-AppWindow $Needle 9000) { return $true }
+    if (Wait-AppWindow $Needle 9000 $ProfileDir) { return $true }
     # 上一个窗口刚关闭时浏览器还在退出，新启动会被吞掉；等一会再试。
     Start-Sleep -Seconds 2
   }
@@ -223,10 +233,11 @@ try {
     Say "检测到 $($screens.Count) 块屏幕：左屏 -> $($primary.DeviceName)，右屏 -> $($secondary.DeviceName)"
   } else {
     $area = $primary.WorkingArea
-    $offset = 44
-    $liveRect = Get-WindowRect $primary $area.X $area.Y $area.Width $area.Height
-    $neuralRect = Get-WindowRect $primary ($area.X + $offset) ($area.Y + $offset) ($area.Width - $offset) ($area.Height - $offset)
-    Say "只检测到一块屏幕：两个窗口全尺寸叠放，可用 Alt+Tab 切换；接上外接显示器后可把右屏拖过去。" "Yellow"
+    $liveWidth = [int]($area.Width / 2)
+    $neuralWidth = $area.Width - $liveWidth
+    $liveRect = Get-WindowRect $primary $area.X $area.Y $liveWidth $area.Height
+    $neuralRect = Get-WindowRect $primary ($area.X + $liveWidth) $area.Y $neuralWidth $area.Height
+    Say "只检测到一块屏幕：两个窗口左右并排；接上外接显示器后会自动一屏一个。" "Yellow"
   }
 
   $browser = Find-Browser
@@ -235,10 +246,10 @@ try {
     $liveOk = Open-AppWindow $browser "$Base/live" $liveRect (Join-Path $profileRoot "window-live") "观察者"
     $neuralOk = Open-AppWindow $browser "$Base/neural" $neuralRect (Join-Path $profileRoot "window-neural") "神经显微镜"
     Start-Sleep -Seconds 1
-    Place-Window "观察者" $liveRect | Out-Null
-    Place-Window "神经显微镜" $neuralRect | Out-Null
+    Place-Window "观察者" $liveRect (Join-Path $profileRoot "window-live") | Out-Null
+    Place-Window "神经显微镜" $neuralRect (Join-Path $profileRoot "window-neural") | Out-Null
     if ($liveOk -and $neuralOk) {
-      Say "已打开两个独立窗口：左屏观察者 / 右屏神经显微镜" "Green"
+      Say "已打开两个独立窗口：左侧观察者 / 右侧神经显微镜" "Green"
     } else {
       $missing = @()
       if (-not $liveOk) { $missing += "观察者" }
@@ -252,8 +263,8 @@ try {
   }
 
   Say ""
-  Say "左屏： http://127.0.0.1:$Port/live" "DarkGray"
-  Say "右屏： http://127.0.0.1:$Port/neural" "DarkGray"
+  Say "左侧： http://127.0.0.1:$Port/live" "DarkGray"
+  Say "右侧： http://127.0.0.1:$Port/neural" "DarkGray"
   Say "后端日志： state\backend.log" "DarkGray"
   Say "启动器可以关闭；后端会继续在后台运行。" "DarkGray"
 } catch {
