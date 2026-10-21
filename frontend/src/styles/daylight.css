@@ -1,0 +1,1476 @@
+/* Daylight theme: solid high-contrast surfaces for bright rooms and outdoor glare.
+   Specimen views (video, feature maps, head canvas) intentionally stay dark. */
+
+:root[data-theme="daylight"] {
+  color-scheme: light;
+  --bg: #eef1f5;
+  --bg-2: #e7ecf2;
+  --panel: #ffffff;
+  --panel-solid: #ffffff;
+  --panel-2: #f4f7fa;
+  --line: rgba(18, 40, 66, 0.15);
+  --line-strong: rgba(18, 40, 66, 0.3);
+  --text: #0b1a2b;
+  --muted: #3c526d;
+  --muted-2: #5b7089;
+  --cyan: #00738a;
+  --blue: #2f5bc7;
+  --violet: #6b3fc8;
+  --amber: #8a5a00;
+  --green: #067258;
+  --red: #b5203c;
+  --heat-pos: #86cfdf;
+  --heat-neg: #eab3bb;
+  --gauge-track: rgba(30, 55, 85, 0.22);
+  --gauge-track-soft: rgba(30, 55, 85, 0.12);
+  --spark-baseline: rgba(30, 55, 85, 0.16);
+  --shadow: 0 14px 34px rgba(17, 36, 60, 0.14);
+}
+
+[data-theme="daylight"] body {
+  background: var(--bg);
+  color: var(--text);
+}
+
+[data-theme="daylight"] body::before {
+  background:
+    radial-gradient(circle at 12% -10%, rgba(0, 115, 138, 0.09), transparent 38%),
+    radial-gradient(circle at 88% 0%, rgba(107, 63, 200, 0.06), transparent 36%),
+    linear-gradient(180deg, #f6f8fb 0%, #edf1f5 100%);
+}
+
+[data-theme="daylight"] body::after {
+  opacity: 0.55;
+  background-image:
+    linear-gradient(rgba(30, 55, 85, 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(30, 55, 85, 0.035) 1px, transparent 1px);
+}
+
+[data-theme="daylight"] ::-webkit-scrollbar-thumb {
+  background: rgba(30, 55, 85, 0.24);
+}
+
+[data-theme="daylight"] ::selection {
+  background: rgba(0, 115, 138, 0.2);
+}
+
+/* ---------- shared chrome ---------- */
+
+[data-theme="daylight"] .panel {
+  background: #ffffff;
+  border-color: var(--line);
+  backdrop-filter: none;
+  box-shadow:
+    0 10px 28px rgba(17, 36, 60, 0.07),
+    0 1px 0 rgba(255, 255, 255, 0.9) inset;
+}
+
+[data-theme="daylight"] .topbar {
+  background: #ffffff;
+  border-bottom-color: var(--line);
+  backdrop-filter: none;
+  box-shadow: 0 2px 12px rgba(17, 36, 60, 0.05);
+}
+
+[data-theme="daylight"] .footer-bar {
+  background: #f5f8fb;
+  border-top-color: var(--line);
+  color: var(--muted-2);
+}
+
+[data-theme="daylight"] .footer-bar b {
+  color: var(--muted);
+}
+
+[data-theme="daylight"] .brand-mark {
+  filter: none;
+}
+
+[data-theme="daylight"] .brand-title em,
+[data-theme="daylight"] .brand-sub {
+  color: var(--muted-2);
+}
+
+[data-theme="daylight"] .panel-kicker,
+[data-theme="daylight"] .n-col .panel-kicker,
+[data-theme="daylight"] .n-stage-head .panel-kicker {
+  color: var(--muted-2);
+}
+
+[data-theme="daylight"] .eyebrow {
+  color: var(--cyan);
+}
+
+[data-theme="daylight"] .eyebrow::before {
+  background: linear-gradient(90deg, var(--cyan), transparent);
+}
+
+[data-theme="daylight"] .btn {
+  background: #f1f5f9;
+  border-color: var(--line-strong);
+  color: var(--text);
+}
+
+[data-theme="daylight"] .btn:hover {
+  background: #e7eef6;
+  border-color: rgba(0, 115, 138, 0.45);
+}
+
+[data-theme="daylight"] .btn-primary {
+  color: #ffffff;
+  background: linear-gradient(118deg, #00697d, #2f5bc7 72%);
+  box-shadow: 0 8px 22px rgba(47, 91, 199, 0.22);
+}
+
+[data-theme="daylight"] .btn-primary:hover {
+  background: linear-gradient(118deg, #007a91, #3b6bda 72%);
+  box-shadow: 0 10px 26px rgba(47, 91, 199, 0.28);
+}
+
+[data-theme="daylight"] .hold-btn {
+  background: #fff8ea;
+  border-color: rgba(138, 90, 0, 0.26);
+  color: var(--amber);
+}
+
+[data-theme="daylight"] .hold-btn:hover {
+  background: #fff1d6;
+  border-color: rgba(138, 90, 0, 0.45);
+}
+
+[data-theme="daylight"] .hold-btn.active {
+  color: #2a1a04;
+  border-color: transparent;
+  background-color: #ffc46b;
+  background-image: linear-gradient(120deg, #ffe2a4, #ffc46b 60%, #f5a94f);
+}
+
+[data-theme="daylight"] .btn-ghost {
+  background: transparent;
+  border-color: var(--line);
+  color: var(--muted);
+}
+
+[data-theme="daylight"] .btn-ghost:hover {
+  background: #f1f5f9;
+  color: var(--text);
+}
+
+[data-theme="daylight"] .theme-toggle {
+  gap: 7px;
+  padding: 0 12px;
+}
+
+[data-theme="daylight"] .theme-toggle span {
+  font-size: 12px;
+  font-weight: 600;
+}
+
+[data-theme="daylight"] .chip {
+  background: #f3f6fa;
+  border-color: var(--line);
+  color: var(--muted);
+}
+
+[data-theme="daylight"] .chip-cyan {
+  color: var(--cyan);
+  border-color: rgba(0, 115, 138, 0.28);
+  background: rgba(0, 115, 138, 0.07);
+}
+
+[data-theme="daylight"] .chip-amber {
+  color: var(--amber);
+  border-color: rgba(138, 90, 0, 0.28);
+  background: rgba(138, 90, 0, 0.07);
+}
+
+[data-theme="daylight"] .chip-green {
+  color: var(--green);
+  border-color: rgba(6, 114, 88, 0.26);
+  background: rgba(6, 114, 88, 0.07);
+}
+
+[data-theme="daylight"] .chip-red {
+  color: var(--red);
+  border-color: rgba(181, 32, 60, 0.26);
+  background: rgba(181, 32, 60, 0.06);
+}
+
+[data-theme="daylight"] .conn-pill {
+  background: #ffffff;
+  border-color: var(--line-strong);
+  color: var(--muted);
+}
+
+[data-theme="daylight"] .conn-pill.on {
+  color: var(--green);
+  border-color: rgba(6, 114, 88, 0.32);
+}
+
+[data-theme="daylight"] .live-dot {
+  box-shadow: none;
+}
+
+[data-theme="daylight"] .toast {
+  background: #ffffff;
+  backdrop-filter: none;
+  border-color: var(--line-strong);
+  box-shadow: 0 18px 40px rgba(17, 36, 60, 0.16);
+}
+
+[data-theme="daylight"] .empty-state {
+  color: var(--muted);
+}
+
+/* ---------- live screen ---------- */
+
+[data-theme="daylight"] .live-telemetry {
+  color: var(--muted-2);
+}
+
+[data-theme="daylight"] .video-panel {
+  background: #ffffff;
+}
+
+[data-theme="daylight"] .video-fit {
+  background:
+    radial-gradient(circle at 50% 42%, rgba(255, 255, 255, 0.9), transparent 62%),
+    linear-gradient(180deg, #eef3f8, #e6ecf3);
+}
+
+[data-theme="daylight"] .video-frame {
+  --text: #f2f7ff;
+  --muted: #b9c9df;
+  --muted-2: #9fb3cc;
+  --cyan: #5ee7ff;
+  --blue: #93b2ff;
+  --violet: #c2a6ff;
+  --amber: #ffc46b;
+  --green: #5df2c1;
+  --red: #ff8b9d;
+  border-color: rgba(18, 40, 66, 0.34);
+  box-shadow:
+    0 18px 44px rgba(17, 36, 60, 0.22),
+    0 0 0 1px rgba(255, 255, 255, 0.6);
+}
+
+[data-theme="daylight"] .video-frame .scanline {
+  display: none;
+}
+
+[data-theme="daylight"] .video-toolbar,
+[data-theme="daylight"] .video-footer {
+  border-color: var(--line);
+}
+
+[data-theme="daylight"] .video-footer {
+  background: #f7fafc;
+  color: var(--muted-2);
+}
+
+[data-theme="daylight"] .video-toolbar-right {
+  color: var(--muted-2);
+}
+
+[data-theme="daylight"] .video-title {
+  color: var(--text);
+}
+
+[data-theme="daylight"] .rec-badge {
+  color: var(--red);
+}
+
+[data-theme="daylight"] .rec-badge i {
+  box-shadow: none;
+}
+
+[data-theme="daylight"] .video-placeholder {
+  color: var(--muted);
+}
+
+[data-theme="daylight"] .video-placeholder em {
+  color: var(--muted-2);
+}
+
+[data-theme="daylight"] .fb-label {
+  background: rgba(3, 9, 17, 0.93);
+  backdrop-filter: none;
+  border-color: rgba(94, 231, 255, 0.28);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.32);
+  color: #eaf2ff;
+}
+
+[data-theme="daylight"] .fb-label b {
+  color: #eaf2ff;
+}
+
+[data-theme="daylight"] .video-hud {
+  background: rgba(3, 9, 17, 0.82);
+  backdrop-filter: none;
+  border-color: rgba(94, 231, 255, 0.2);
+}
+
+[data-theme="daylight"] .no-face {
+  background: rgba(3, 9, 17, 0.88);
+  backdrop-filter: none;
+  border-color: rgba(160, 196, 238, 0.28);
+}
+
+[data-theme="daylight"] .paused-badge {
+  background: rgba(22, 16, 5, 0.9);
+  backdrop-filter: none;
+  border-color: rgba(255, 196, 107, 0.4);
+}
+
+[data-theme="daylight"] .video-vignette {
+  opacity: 0.7;
+}
+
+[data-theme="daylight"] .live-side {
+  scrollbar-color: rgba(30, 55, 85, 0.24) transparent;
+}
+
+[data-theme="daylight"] .conf-row-bar,
+[data-theme="daylight"] .sim-bar,
+[data-theme="daylight"] .mini-bar,
+[data-theme="daylight"] .top-bar,
+[data-theme="daylight"] .n-probe-bar {
+  background: rgba(30, 55, 85, 0.13);
+}
+
+[data-theme="daylight"] .conf-formula {
+  background: rgba(0, 115, 138, 0.06);
+  border-color: rgba(0, 115, 138, 0.16);
+  color: var(--muted);
+}
+
+[data-theme="daylight"] .conf-formula b {
+  color: var(--text);
+}
+
+[data-theme="daylight"] .conf-note {
+  font-size: 10.5px;
+  color: var(--muted);
+}
+
+[data-theme="daylight"] .sparkline line {
+  stroke: var(--spark-baseline);
+}
+
+[data-theme="daylight"] .identity-avatar,
+[data-theme="daylight"] .face-thumb {
+  background: #eef3f8;
+}
+
+[data-theme="daylight"] .identity-avatar.known {
+  border-color: rgba(6, 114, 88, 0.5);
+  box-shadow: 0 0 0 3px rgba(6, 114, 88, 0.08);
+}
+
+[data-theme="daylight"] .avatar-check {
+  color: #ffffff;
+  border-color: #ffffff;
+}
+
+[data-theme="daylight"] .sim-bar i,
+[data-theme="daylight"] .mini-bar i {
+  background: linear-gradient(90deg, var(--blue), var(--cyan) 58%, var(--green));
+}
+
+[data-theme="daylight"] .sim-bar em {
+  background: var(--amber);
+  box-shadow: none;
+}
+
+[data-theme="daylight"] .enroll-row input,
+[data-theme="daylight"] .source-stream-row input {
+  background: #ffffff;
+  border-color: var(--line-strong);
+  color: var(--text);
+}
+
+[data-theme="daylight"] .enroll-row input:focus,
+[data-theme="daylight"] .source-stream-row input:focus {
+  border-color: rgba(0, 115, 138, 0.55);
+}
+
+[data-theme="daylight"] .gallery-item button {
+  background: #ffffff;
+  border-color: var(--line-strong);
+}
+
+[data-theme="daylight"] .face-row {
+  background: #f7f9fc;
+}
+
+[data-theme="daylight"] .face-row:hover {
+  background: rgba(0, 115, 138, 0.07);
+}
+
+[data-theme="daylight"] .face-row.active {
+  background: rgba(0, 115, 138, 0.09);
+  border-color: rgba(0, 115, 138, 0.36);
+}
+
+[data-theme="daylight"] .source-menu {
+  background: #ffffff;
+  box-shadow: 0 24px 56px rgba(17, 36, 60, 0.2);
+}
+
+[data-theme="daylight"] .source-option:hover,
+[data-theme="daylight"] .source-option.active {
+  background: rgba(0, 115, 138, 0.07);
+  border-color: rgba(0, 115, 138, 0.24);
+}
+
+[data-theme="daylight"] .source-icon {
+  background: #eef3f8;
+  color: var(--cyan);
+}
+
+[data-theme="daylight"] .source-stream {
+  background: #f7f9fc;
+}
+
+[data-theme="daylight"] .source-option em,
+[data-theme="daylight"] .source-menu-title {
+  color: var(--muted-2);
+}
+
+/* ---------- neural chrome ---------- */
+
+[data-theme="daylight"] .tour-controls,
+[data-theme="daylight"] .mode-switch {
+  background: #ffffff;
+  border-color: var(--line);
+}
+
+[data-theme="daylight"] .tour-btn {
+  color: var(--muted);
+}
+
+[data-theme="daylight"] .tour-btn:hover {
+  background: rgba(0, 115, 138, 0.08);
+}
+
+[data-theme="daylight"] .tour-btn.primary {
+  color: #ffffff;
+  background: linear-gradient(118deg, #00697d, #2f5bc7);
+  box-shadow: 0 4px 14px rgba(47, 91, 199, 0.24);
+}
+
+[data-theme="daylight"] .tour-btn.primary:hover {
+  background: linear-gradient(118deg, #007a91, #3b6bda);
+}
+
+[data-theme="daylight"] .speed-switch button,
+[data-theme="daylight"] .mode-switch button {
+  color: var(--muted-2);
+}
+
+[data-theme="daylight"] .speed-switch button.active,
+[data-theme="daylight"] .mode-switch button.active {
+  color: var(--text);
+  background: rgba(0, 115, 138, 0.1);
+  box-shadow: inset 0 0 0 1px rgba(0, 115, 138, 0.18);
+}
+
+[data-theme="daylight"] .station-bar {
+  background: #ffffff;
+  backdrop-filter: none;
+  border-color: var(--line);
+}
+
+[data-theme="daylight"] .station-item:hover {
+  background: rgba(0, 115, 138, 0.05);
+}
+
+[data-theme="daylight"] .station-item.active {
+  border-color: color-mix(in srgb, var(--station) 30%, transparent);
+  background: color-mix(in srgb, var(--station) 8%, #ffffff);
+}
+
+[data-theme="daylight"] .station-node i {
+  border-color: rgba(60, 82, 109, 0.5);
+  background: rgba(60, 82, 109, 0.12);
+}
+
+[data-theme="daylight"] .station-range {
+  color: var(--muted-2);
+}
+
+[data-theme="daylight"] .station-hint {
+  border-top-color: var(--line);
+}
+
+[data-theme="daylight"] .station-hint .mono {
+  color: var(--muted-2);
+}
+
+[data-theme="daylight"] .station-hint p {
+  color: var(--muted);
+}
+
+[data-theme="daylight"] .station-live {
+  color: var(--green);
+  border-color: rgba(6, 114, 88, 0.22);
+  background: rgba(6, 114, 88, 0.05);
+}
+
+[data-theme="daylight"] .n-stage-head {
+  background:
+    linear-gradient(120deg, rgba(0, 115, 138, 0.05), transparent 46%),
+    #ffffff;
+}
+
+[data-theme="daylight"] .n-stage-chips > span {
+  background: #f4f7fa;
+  border-color: var(--line);
+}
+
+[data-theme="daylight"] .n-stage-chips > .n-station-chip {
+  background: color-mix(in srgb, var(--station) 8%, #ffffff);
+}
+
+[data-theme="daylight"] .n-stage-chips > .n-forward-chip {
+  color: var(--green);
+  background: color-mix(in srgb, var(--green) 9%, #ffffff);
+}
+
+[data-theme="daylight"] .n-stage-explain {
+  color: var(--muted);
+}
+
+[data-theme="daylight"] .n-stage-note {
+  background: #ffffff;
+}
+
+[data-theme="daylight"] .n-stage-note p {
+  color: var(--muted);
+}
+
+[data-theme="daylight"] .n-stage-note p b {
+  color: var(--text);
+}
+
+[data-theme="daylight"] .n-stage-note-tag {
+  color: var(--muted-2);
+}
+
+[data-theme="daylight"] .n-stage-note-icon {
+  background: rgba(0, 115, 138, 0.06);
+  border-color: rgba(0, 115, 138, 0.2);
+}
+
+[data-theme="daylight"] .n-map-wrap {
+  background: #0a111c;
+  border-color: var(--line);
+  box-shadow: 0 10px 26px rgba(17, 36, 60, 0.14);
+}
+
+[data-theme="daylight"] .n-stage-map .fm-badge,
+[data-theme="daylight"] .n-stage-map .fm-activity,
+[data-theme="daylight"] .n-stage-map .fm-shape,
+[data-theme="daylight"] .n-input-hud,
+[data-theme="daylight"] .n-roi-tag,
+[data-theme="daylight"] .fm-badge,
+[data-theme="daylight"] .fm-activity,
+[data-theme="daylight"] .fm-shape {
+  backdrop-filter: none;
+}
+
+/* Specimen views are always dark, so their overlays keep the dark-theme palette. */
+[data-theme="daylight"] .feature-map,
+[data-theme="daylight"] .n-input,
+[data-theme="daylight"] .head-canvas {
+  --text: #eaf2ff;
+  --muted: #b9c9df;
+  --muted-2: #93a9c4;
+  --line: rgba(160, 196, 238, 0.2);
+  --line-strong: rgba(160, 196, 238, 0.32);
+  --cyan: #5ee7ff;
+  --blue: #93b2ff;
+  --violet: #c2a6ff;
+  --amber: #ffc46b;
+  --green: #5df2c1;
+  --red: #ff8b9d;
+}
+
+[data-theme="daylight"] .fm-badge,
+[data-theme="daylight"] .fm-activity,
+[data-theme="daylight"] .fm-shape {
+  background: rgba(4, 8, 15, 0.82);
+}
+
+[data-theme="daylight"] .n-map-flash {
+  animation: none;
+  opacity: 0;
+}
+
+[data-theme="daylight"] .n-map-readout {
+  background: rgba(4, 8, 15, 0.82);
+  border-color: rgba(160, 196, 238, 0.22);
+  color: #b9c9df;
+}
+
+[data-theme="daylight"] .n-input {
+  background: #0a111c;
+}
+
+[data-theme="daylight"] .n-input-hud {
+  background: rgba(3, 9, 17, 0.86);
+}
+
+[data-theme="daylight"] .n-input-hud b {
+  color: #f2f7ff;
+}
+
+[data-theme="daylight"] .n-input-hud span {
+  color: #b9c9df;
+}
+
+[data-theme="daylight"] .n-roi-tag {
+  background: rgba(3, 9, 17, 0.88);
+}
+
+[data-theme="daylight"] .n-kv > div,
+[data-theme="daylight"] .n-prop-grid > div,
+[data-theme="daylight"] .structure-props > div,
+[data-theme="daylight"] .flow-node {
+  background: #ffffff;
+}
+
+[data-theme="daylight"] .n-kv,
+[data-theme="daylight"] .n-prop-grid,
+[data-theme="daylight"] .structure-props {
+  background: var(--line);
+}
+
+[data-theme="daylight"] .n-telemetry-foot {
+  color: var(--muted-2);
+}
+
+[data-theme="daylight"] .eye-cell {
+  border-color: transparent;
+}
+
+[data-theme="daylight"] .eye-cell:hover,
+[data-theme="daylight"] .eye-cell.active {
+  background: rgba(0, 115, 138, 0.06);
+  border-color: rgba(0, 115, 138, 0.24);
+}
+
+[data-theme="daylight"] .eye-caption em {
+  color: var(--muted-2);
+}
+
+[data-theme="daylight"] .eye-note,
+[data-theme="daylight"] .n-input-note {
+  color: var(--muted-2);
+}
+
+/* ---------- microscope ---------- */
+
+[data-theme="daylight"] .patch-grid,
+[data-theme="daylight"] .kernel-grid {
+  background: #f8fafc;
+  border-color: rgba(30, 55, 85, 0.22);
+}
+
+[data-theme="daylight"] .value-cell {
+  color: #14283c;
+  border-color: rgba(18, 40, 66, 0.07);
+}
+
+[data-theme="daylight"] .value-cell.inside {
+  outline: 2px solid var(--cyan);
+  outline-offset: -1px;
+}
+
+[data-theme="daylight"] .kernel-window {
+  background: rgba(0, 115, 138, 0.16);
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.9),
+    0 0 12px rgba(0, 115, 138, 0.24);
+}
+
+[data-theme="daylight"] .micro-play,
+[data-theme="daylight"] .btn-mini,
+[data-theme="daylight"] .head-expand {
+  background: #f4f7fa;
+}
+
+[data-theme="daylight"] .micro-sum {
+  background: rgba(0, 115, 138, 0.07);
+  border-color: rgba(0, 115, 138, 0.22);
+}
+
+[data-theme="daylight"] .micro-sum > b {
+  text-shadow: none;
+}
+
+[data-theme="daylight"] .step-pill {
+  color: var(--muted-2);
+}
+
+[data-theme="daylight"] .step-pill i {
+  background: rgba(30, 55, 85, 0.16);
+}
+
+[data-theme="daylight"] .step-pill.active {
+  background: rgba(0, 115, 138, 0.08);
+  border-color: rgba(0, 115, 138, 0.5);
+}
+
+[data-theme="daylight"] .step-pill.active i {
+  box-shadow: none;
+}
+
+[data-theme="daylight"] .micro-card .panel-kicker,
+[data-theme="daylight"] .micro-meta,
+[data-theme="daylight"] .array-label em,
+[data-theme="daylight"] .kernel-tag,
+[data-theme="daylight"] .micro-note {
+  color: var(--muted-2);
+}
+
+/* ---------- structure diagrams ---------- */
+
+[data-theme="daylight"] .structure-diagram {
+  background:
+    radial-gradient(circle at 50% 45%, rgba(0, 115, 138, 0.07), transparent 62%),
+    #f8fafc;
+}
+
+[data-theme="daylight"] .structure-diagram::before {
+  background-image: radial-gradient(rgba(0, 115, 138, 0.2) 1px, transparent 1.2px);
+}
+
+[data-theme="daylight"] .structure-diagram::after {
+  animation: none;
+  opacity: 0;
+}
+
+[data-theme="daylight"] .diagram-formula {
+  background: #ffffff;
+  border-color: rgba(0, 115, 138, 0.2);
+  color: var(--muted);
+}
+
+[data-theme="daylight"] .diag-grid i {
+  border-color: rgba(0, 115, 138, 0.2);
+  background: rgba(0, 115, 138, 0.1);
+}
+
+[data-theme="daylight"] .diag-kernel {
+  box-shadow: none;
+}
+
+[data-theme="daylight"] .diag-input,
+[data-theme="daylight"] .diag-output {
+  border-color: rgba(0, 115, 138, 0.32);
+}
+
+[data-theme="daylight"] .diag-branch-boxes span {
+  background: #ffffff;
+}
+
+[data-theme="daylight"] .sppf-box {
+  border-color: rgba(0, 115, 138, 0.34);
+  background: rgba(0, 115, 138, 0.05);
+}
+
+[data-theme="daylight"] .attention-core {
+  box-shadow: 0 0 14px rgba(107, 63, 200, 0.18);
+}
+
+[data-theme="daylight"] .concat-stack i {
+  background: rgba(0, 115, 138, 0.34);
+}
+
+[data-theme="daylight"] .concat-stack.alt i {
+  background: rgba(107, 63, 200, 0.34);
+}
+
+[data-theme="daylight"] .concat-stack.merged i {
+  background: linear-gradient(90deg, rgba(0, 115, 138, 0.55), rgba(107, 63, 200, 0.55));
+}
+
+[data-theme="daylight"] .flow-node.accent {
+  background: color-mix(in srgb, var(--station) 7%, #ffffff);
+}
+
+[data-theme="daylight"] .diag-attention em,
+[data-theme="daylight"] .sppf-note,
+[data-theme="daylight"] .structure-caption em,
+[data-theme="daylight"] .structure-props span {
+  color: var(--muted-2);
+}
+
+/* ---------- head / why / probe ---------- */
+
+[data-theme="daylight"] .head-stats,
+[data-theme="daylight"] .n-route {
+  border-color: var(--line);
+}
+
+[data-theme="daylight"] .head-stats-right,
+[data-theme="daylight"] .head-active > span {
+  color: var(--muted-2);
+}
+
+[data-theme="daylight"] .slot-grid-compact i.hot,
+[data-theme="daylight"] .head-slot.hot i {
+  box-shadow: none;
+}
+
+[data-theme="daylight"] .top-bar {
+  background: rgba(30, 55, 85, 0.13);
+}
+
+[data-theme="daylight"] .head-full-side {
+  background: #ffffff;
+}
+
+[data-theme="daylight"] .head-full-side p {
+  color: var(--muted);
+}
+
+[data-theme="daylight"] .head-canvas {
+  border-color: var(--line);
+  box-shadow: 0 10px 26px rgba(17, 36, 60, 0.14);
+}
+
+[data-theme="daylight"] .proposal-box.top {
+  box-shadow: none;
+}
+
+[data-theme="daylight"] .head-canvas-label {
+  background: rgba(4, 8, 15, 0.84);
+}
+
+[data-theme="daylight"] .head-slot-grid {
+  background: #f8fafc;
+}
+
+[data-theme="daylight"] .head-slot {
+  background: rgba(138, 90, 0, 0.06);
+}
+
+[data-theme="daylight"] .head-slot i {
+  background: rgba(138, 90, 0, 0.24);
+}
+
+[data-theme="daylight"] .head-panel-full .head-stats {
+  background:
+    linear-gradient(120deg, rgba(138, 90, 0, 0.06), transparent 46%),
+    #ffffff;
+}
+
+[data-theme="daylight"] .n-why-station {
+  background: color-mix(in srgb, var(--station) 7%, #ffffff);
+}
+
+[data-theme="daylight"] .n-why-node i {
+  box-shadow: none;
+}
+
+[data-theme="daylight"] .n-route-step.active i {
+  box-shadow: none;
+}
+
+[data-theme="daylight"] .n-probe-dot.live,
+[data-theme="daylight"] .n-probe-dot.paused {
+  box-shadow: none;
+}
+
+/* ---------- layer rail ---------- */
+
+[data-theme="daylight"] .n-rail-panel {
+  background: #ffffff;
+}
+
+[data-theme="daylight"] .rail-thumb {
+  background: #eff3f8;
+  border-color: var(--line);
+}
+
+[data-theme="daylight"] .rail-void {
+  background-image:
+    linear-gradient(rgba(30, 55, 85, 0.09) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(30, 55, 85, 0.09) 1px, transparent 1px);
+}
+
+[data-theme="daylight"] .rail-tile.active .rail-thumb {
+  box-shadow:
+    0 0 0 1px var(--station),
+    0 6px 14px color-mix(in srgb, var(--station) 18%, transparent);
+}
+
+[data-theme="daylight"] .rail-tile.active .rail-thumb::after {
+  animation: none;
+  opacity: 0;
+}
+
+[data-theme="daylight"] .rail-tile.head-tile .rail-thumb {
+  background:
+    radial-gradient(circle, rgba(138, 90, 0, 0.12), transparent 70%),
+    #fbf7ef;
+}
+
+[data-theme="daylight"] .rail-foot .mono,
+[data-theme="daylight"] .rail-foot em {
+  color: var(--muted-2);
+}
+
+/* ---------- landing ---------- */
+
+[data-theme="daylight"] .landing-nav {
+  background: #ffffff;
+  border-bottom-color: var(--line);
+  backdrop-filter: none;
+  box-shadow: 0 2px 12px rgba(17, 36, 60, 0.05);
+}
+
+[data-theme="daylight"] .hero h1 .gradient-text {
+  background-image: linear-gradient(100deg, #00738a 4%, #2f5bc7 48%, #6b3fc8 94%);
+  filter: none;
+}
+
+[data-theme="daylight"] .hero-lead,
+[data-theme="daylight"] .guide-copy p {
+  color: var(--muted);
+}
+
+[data-theme="daylight"] .display-stage::before {
+  border-color: rgba(0, 115, 138, 0.16);
+}
+
+[data-theme="daylight"] .display-stage::after {
+  border-color: rgba(47, 91, 199, 0.1);
+}
+
+[data-theme="daylight"] .stage-glow {
+  background:
+    radial-gradient(circle at 65% 32%, rgba(0, 115, 138, 0.1), transparent 42%),
+    radial-gradient(circle at 40% 76%, rgba(107, 63, 200, 0.07), transparent 46%);
+  filter: blur(26px);
+}
+
+[data-theme="daylight"] .laptop-wrap {
+  filter: drop-shadow(0 24px 38px rgba(17, 36, 60, 0.24));
+}
+
+[data-theme="daylight"] .monitor-wrap {
+  filter: drop-shadow(0 28px 44px rgba(17, 36, 60, 0.26));
+  animation: none;
+}
+
+[data-theme="daylight"] .stage-flow {
+  color: var(--muted-2);
+}
+
+[data-theme="daylight"] .stage-flow i {
+  background: linear-gradient(90deg, transparent, rgba(0, 115, 138, 0.45), transparent);
+}
+
+[data-theme="daylight"] .story-card {
+  background:
+    linear-gradient(155deg, rgba(0, 115, 138, 0.05), transparent 42%),
+    #ffffff;
+}
+
+[data-theme="daylight"] .story-card:hover {
+  border-color: rgba(0, 115, 138, 0.3);
+  box-shadow: 0 16px 36px rgba(17, 36, 60, 0.09);
+}
+
+[data-theme="daylight"] .story-icon {
+  border-color: rgba(0, 115, 138, 0.24);
+  background: rgba(0, 115, 138, 0.06);
+}
+
+[data-theme="daylight"] .guide-panel {
+  background:
+    radial-gradient(circle at 85% 10%, rgba(0, 115, 138, 0.07), transparent 38%),
+    radial-gradient(circle at 10% 90%, rgba(107, 63, 200, 0.05), transparent 40%),
+    #ffffff;
+  border-color: var(--line-strong);
+  backdrop-filter: none;
+  box-shadow: 0 16px 40px rgba(17, 36, 60, 0.08);
+}
+
+[data-theme="daylight"] .guide-step {
+  background: #f7f9fc;
+}
+
+[data-theme="daylight"] .guide-step p,
+[data-theme="daylight"] .tech-strip,
+[data-theme="daylight"] .tech-note {
+  color: var(--muted-2);
+}
+
+[data-theme="daylight"] .tech-item {
+  color: var(--muted);
+}
+
+[data-theme="daylight"] .landing-footer {
+  background: #f4f7fa;
+  color: var(--muted-2);
+}
+
+/* ---------- daylight typography: raise the smallest labels ---------- */
+
+[data-theme="daylight"] .eyebrow {
+  font-size: 11px;
+}
+
+[data-theme="daylight"] .panel-kicker,
+[data-theme="daylight"] .n-col .panel-kicker,
+[data-theme="daylight"] .n-stage-head .panel-kicker {
+  font-size: 10.5px;
+}
+
+[data-theme="daylight"] .brand-sub {
+  font-size: 11px;
+}
+
+[data-theme="daylight"] .chip,
+[data-theme="daylight"] .conn-pill {
+  font-size: 11px;
+}
+
+[data-theme="daylight"] .footer-bar {
+  font-size: 11px;
+}
+
+[data-theme="daylight"] .gauge-caption {
+  font-size: 10.5px;
+}
+
+[data-theme="daylight"] .live-telemetry {
+  font-size: 11px;
+}
+
+[data-theme="daylight"] .video-toolbar-right {
+  font-size: 10.5px;
+}
+
+[data-theme="daylight"] .rec-badge {
+  font-size: 10px;
+}
+
+[data-theme="daylight"] .video-footer {
+  font-size: 10.5px;
+  height: 32px;
+}
+
+[data-theme="daylight"] .hud-label {
+  font-size: 10px;
+  letter-spacing: 0.12em;
+}
+
+[data-theme="daylight"] .hud-sub {
+  font-size: 10px;
+}
+
+[data-theme="daylight"] .fb-label,
+[data-theme="daylight"] .fb-label b {
+  font-size: 11.5px;
+}
+
+[data-theme="daylight"] .fb-conf {
+  font-size: 11px;
+}
+
+[data-theme="daylight"] .fb-id {
+  font-size: 10px;
+}
+
+[data-theme="daylight"] .fb-mini-id {
+  font-size: 9.5px;
+}
+
+[data-theme="daylight"] .source-menu-title {
+  font-size: 10.5px;
+}
+
+[data-theme="daylight"] .source-option em {
+  font-size: 11px;
+}
+
+[data-theme="daylight"] .source-stream-label,
+[data-theme="daylight"] .source-stream-row input {
+  font-size: 11.5px;
+}
+
+[data-theme="daylight"] .conf-row-head {
+  font-size: 11.5px;
+}
+
+[data-theme="daylight"] .conf-row-head b {
+  font-size: 12px;
+}
+
+[data-theme="daylight"] .conf-formula {
+  font-size: 10px;
+}
+
+[data-theme="daylight"] .spark-head {
+  font-size: 10.5px;
+}
+
+[data-theme="daylight"] .spark-head .mono {
+  font-size: 9.5px;
+}
+
+[data-theme="daylight"] .identity-name-row .chip {
+  font-size: 9.5px;
+  height: 21px;
+}
+
+[data-theme="daylight"] .sim-row {
+  font-size: 10.5px;
+}
+
+[data-theme="daylight"] .sim-row b {
+  font-size: 12px;
+}
+
+[data-theme="daylight"] .sim-caption,
+[data-theme="daylight"] .gallery-count,
+[data-theme="daylight"] .gallery-item span {
+  font-size: 9.5px;
+}
+
+[data-theme="daylight"] .face-index {
+  font-size: 9.5px;
+}
+
+[data-theme="daylight"] .face-row-top b {
+  font-size: 12px;
+}
+
+[data-theme="daylight"] .face-row-top em {
+  font-size: 11px;
+}
+
+[data-theme="daylight"] .face-row-sub {
+  font-size: 9.5px;
+}
+
+[data-theme="daylight"] .tour-label,
+[data-theme="daylight"] .speed-switch button {
+  font-size: 10px;
+}
+
+[data-theme="daylight"] .mode-switch button {
+  font-size: 11.5px;
+}
+
+[data-theme="daylight"] .station-name em,
+[data-theme="daylight"] .station-range,
+[data-theme="daylight"] .station-live,
+[data-theme="daylight"] .station-hint .mono {
+  font-size: 9.5px;
+}
+
+[data-theme="daylight"] .station-hint p {
+  font-size: 12px;
+}
+
+[data-theme="daylight"] .n-input-meta,
+[data-theme="daylight"] .n-input-source {
+  font-size: 9.5px;
+}
+
+[data-theme="daylight"] .n-input-note,
+[data-theme="daylight"] .eye-note {
+  font-size: 11px;
+}
+
+[data-theme="daylight"] .n-roi-tag {
+  font-size: 9.5px;
+}
+
+[data-theme="daylight"] .n-face {
+  font-size: 11px;
+}
+
+[data-theme="daylight"] .n-input-hud span {
+  font-size: 10px;
+}
+
+[data-theme="daylight"] .n-input-hud .chip {
+  font-size: 9.5px;
+}
+
+[data-theme="daylight"] .eye-caption em {
+  font-size: 9px;
+}
+
+[data-theme="daylight"] .n-kv span {
+  font-size: 9.5px;
+}
+
+[data-theme="daylight"] .n-kv b {
+  font-size: 12px;
+}
+
+[data-theme="daylight"] .n-kv b em {
+  font-size: 9px;
+}
+
+[data-theme="daylight"] .n-kv-small {
+  font-size: 9.5px !important;
+}
+
+[data-theme="daylight"] .n-telemetry-foot {
+  font-size: 9.5px;
+}
+
+[data-theme="daylight"] .n-stage-sub {
+  font-size: 10px;
+}
+
+[data-theme="daylight"] .n-stage-chips > span {
+  font-size: 9.5px;
+  padding: 4px 7px;
+}
+
+[data-theme="daylight"] .n-stage-explain {
+  font-size: 12px;
+}
+
+[data-theme="daylight"] .n-stage-explain .mono {
+  font-size: 9.5px;
+}
+
+[data-theme="daylight"] .n-stage-note p {
+  font-size: 11px;
+}
+
+[data-theme="daylight"] .n-stage-note-tag {
+  font-size: 9px;
+}
+
+[data-theme="daylight"] .n-map-readout {
+  font-size: 9px;
+}
+
+[data-theme="daylight"] .fm-badge,
+[data-theme="daylight"] .fm-activity,
+[data-theme="daylight"] .fm-shape,
+[data-theme="daylight"] .n-stage-map .fm-badge,
+[data-theme="daylight"] .n-stage-map .fm-activity,
+[data-theme="daylight"] .n-stage-map .fm-shape {
+  font-size: 9.5px;
+}
+
+[data-theme="daylight"] .micro-meta {
+  font-size: 9.5px;
+}
+
+[data-theme="daylight"] .array-label {
+  font-size: 10.5px;
+}
+
+[data-theme="daylight"] .array-label em {
+  font-size: 8.5px;
+}
+
+[data-theme="daylight"] .value-cell {
+  font-size: 7px;
+}
+
+[data-theme="daylight"] .kernel-tag {
+  font-size: 8.5px;
+}
+
+[data-theme="daylight"] .step-pill {
+  width: 24px;
+  height: 22px;
+  font-size: 8px;
+}
+
+[data-theme="daylight"] .micro-note {
+  font-size: 10.5px;
+}
+
+[data-theme="daylight"] .diagram-formula {
+  font-size: 10.5px;
+}
+
+[data-theme="daylight"] .diag-input,
+[data-theme="daylight"] .diag-output,
+[data-theme="daylight"] .diag-branch-boxes span,
+[data-theme="daylight"] .sppf-box,
+[data-theme="daylight"] .sppf-note,
+[data-theme="daylight"] .diag-attention em,
+[data-theme="daylight"] .diag-decision span {
+  font-size: 9.5px;
+}
+
+[data-theme="daylight"] .flow-node em {
+  font-size: 8.5px;
+}
+
+[data-theme="daylight"] .flow-node b {
+  font-size: 10.5px;
+}
+
+[data-theme="daylight"] .structure-caption {
+  font-size: 11px;
+}
+
+[data-theme="daylight"] .structure-caption em {
+  font-size: 10px;
+}
+
+[data-theme="daylight"] .structure-props span {
+  font-size: 9px;
+}
+
+[data-theme="daylight"] .structure-props b {
+  font-size: 10.5px;
+}
+
+[data-theme="daylight"] .head-active > span,
+[data-theme="daylight"] .head-stats-right {
+  font-size: 9.5px;
+}
+
+[data-theme="daylight"] .head-active em,
+[data-theme="daylight"] .head-full-side p,
+[data-theme="daylight"] .n-why-block p {
+  font-size: 11.5px;
+}
+
+[data-theme="daylight"] .top-item {
+  font-size: 9.5px;
+}
+
+[data-theme="daylight"] .top-item > span {
+  font-size: 9.5px;
+}
+
+[data-theme="daylight"] .top-item b {
+  font-size: 10.5px;
+}
+
+[data-theme="daylight"] .head-expand,
+[data-theme="daylight"] .btn-mini {
+  font-size: 10px;
+}
+
+[data-theme="daylight"] .head-canvas-label {
+  font-size: 9.5px;
+}
+
+[data-theme="daylight"] .proposal-box em {
+  font-size: 8.5px;
+}
+
+[data-theme="daylight"] .head-live-note {
+  font-size: 10px;
+}
+
+[data-theme="daylight"] .n-why-label {
+  font-size: 10px;
+}
+
+[data-theme="daylight"] .n-prop-grid > div {
+  font-size: 9px;
+  padding: 6px 8px;
+}
+
+[data-theme="daylight"] .n-route-step {
+  font-size: 9.5px;
+}
+
+[data-theme="daylight"] .n-probe-top {
+  font-size: 11px;
+}
+
+[data-theme="daylight"] .n-probe-top > span:last-child,
+[data-theme="daylight"] .n-probe-metrics {
+  font-size: 9.5px;
+}
+
+[data-theme="daylight"] .n-probe-card p {
+  font-size: 10.5px;
+}
+
+[data-theme="daylight"] .n-rail-title {
+  font-size: 11.5px;
+}
+
+[data-theme="daylight"] .n-rail-hint {
+  font-size: 9px;
+}
+
+[data-theme="daylight"] .rail-foot .mono {
+  font-size: 8.5px;
+}
+
+[data-theme="daylight"] .screen-label {
+  font-size: 9.5px;
+}
+
+[data-theme="daylight"] .stage-flow {
+  font-size: 9.5px;
+}
+
+[data-theme="daylight"] .hero-note {
+  font-size: 11.5px;
+}
+
+[data-theme="daylight"] .hero-stats span {
+  font-size: 10.5px;
+}
+
+[data-theme="daylight"] .story-index {
+  font-size: 9.5px;
+}
+
+[data-theme="daylight"] .story-card p {
+  font-size: 12.5px;
+}
+
+[data-theme="daylight"] .guide-step p {
+  font-size: 11.5px;
+}
+
+[data-theme="daylight"] .tech-strip {
+  font-size: 10.5px;
+}
+
+[data-theme="daylight"] .tech-note {
+  font-size: 11px;
+}
+
+[data-theme="daylight"] .landing-footer {
+  font-size: 10.5px;
+}
+
+[data-theme="daylight"] .landing-footer .mono {
+  font-size: 9.5px;
+}
+
+/* keep header controls compact on narrower laptop viewports */
+@media (max-width: 1420px) {
+  [data-theme="daylight"] .theme-toggle {
+    width: 38px;
+    padding: 0;
+  }
+
+  [data-theme="daylight"] .theme-toggle span {
+    display: none;
+  }
+}
+
+@media (max-width: 980px) {
+  [data-theme="daylight"] .video-footer {
+    font-size: 9.5px;
+  }
+}

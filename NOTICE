@@ -1,0 +1,15 @@
+YOLO26 Neural Scope (YOLO26 神经显微镜)
+Copyright (C) 2026 TyTs (ADA-quart) and CDUT-AI-Club contributors
+
+The source code in this repository is licensed under the GNU Affero General
+Public License, version 3 (see LICENSE).
+
+Bundled third-party models and demo media are NOT covered by that license:
+
+- YOLO26n-Pose weights: AGPL-3.0, Ultralytics.
+- EdgeFace-S ONNX weights: CC BY-NC-SA 4.0, Idiap Research Institute.
+  Non-commercial use only.
+- Demo video and derived face crops: CC BY 4.0, Intel IoT DevKit
+  sample-videos.
+
+See THIRD_PARTY_NOTICES.md for links and details.

@@ -1,0 +1,18 @@
+# Python 3.10
+# Tested on Windows 11 + Tesla V100 16GB + CUDA 12.4.
+# For CPU or a different CUDA version, install matching torch/torchvision first:
+# https://pytorch.org/get-started/locally/
+--extra-index-url https://download.pytorch.org/whl/cu124
+
+torch==2.6.0+cu124
+torchvision==0.21.0+cu124
+ultralytics==8.4.48
+
+fastapi==0.136.1
+uvicorn[standard]==0.47.0
+python-multipart==0.0.28
+pydantic==2.13.4
+
+numpy==1.26.4
+opencv-python==4.9.0.80
+onnxruntime==1.23.2
