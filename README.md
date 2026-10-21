@@ -445,7 +445,6 @@ EdgeFace 的**推理代码**是 BSD-3-Clause，但**预训练权重**的官方�
   - *EdgeFace: Efficient Face Recognition Model for Edge Devices*，<https://arxiv.org/abs/2307.01838>
 - [Intel IoT DevKit sample-videos](https://github.com/intel-iot-devkit/sample-videos) — 演示视频（CC BY 4.0）。
 - PyTorch、ONNX Runtime、OpenCV、NumPy、FastAPI、Uvicorn、Pydantic、React、Vite、TypeScript、framer-motion、lucide-react。
-- 成都理工大学人工智能协会（CDUT-AI-Club）的同学们提供的课堂反馈。
 
 ### 仓库
 
