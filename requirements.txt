@@ -16,3 +16,7 @@ pydantic==2.13.4
 numpy==1.26.4
 opencv-python==4.9.0.80
 onnxruntime==1.23.2
+
+# Optional TensorRT fast path (1.1 GB, not installed by default; see README):
+# pip install --extra-index-url https://pypi.nvidia.com tensorrt_cu12_libs==10.4.0 tensorrt_cu12_bindings==10.4.0
+# python backend/build_engine.py

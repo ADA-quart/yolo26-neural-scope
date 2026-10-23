@@ -533,7 +533,7 @@ export default function LiveScreen() {
 
       <footer className="footer-bar">
         <div className="footer-metrics">
-          <span><b>MODEL</b> {model?.name ?? "YOLO26n-Pose"}</span>
+          <span><b>MODEL</b> {model?.name ?? "YOLO26n-Pose"} · {model?.runtime?.includes("TensorRT") ? "TensorRT" : "PyTorch"}</span>
           <span><b>INPUT</b> {model?.input ?? 640}×{model?.input ?? 640}</span>
           <span><b>GPU</b> {model?.gpu?.replace("Tesla ", "") ?? "detecting"}</span>
           <span><b>ID</b> {model?.embedder ?? "EdgeFace-S"}</span>

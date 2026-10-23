@@ -45,10 +45,10 @@ function Resolve-Python {
   foreach ($pattern in $patterns) {
     $candidates += Get-ChildItem $pattern -ErrorAction SilentlyContinue | Select-Object -ExpandProperty FullName
   }
-  $candidates = $candidates | Sort-Object @{ Expression = { if ($_ -match "yolo") { 0 } else { 1 } } }, @{ Expression = { $_ } }
+  $candidates = @($candidates | Sort-Object @{ Expression = { if ($_ -match "yolo") { 0 } else { 1 } } }, @{ Expression = { $_ } })
   $command = Get-Command python -ErrorAction SilentlyContinue
-  if ($command) { $candidates += $command.Source }
-  $candidates = $candidates | Select-Object -Unique
+  if ($command) { $candidates += @($command.Source) }
+  $candidates = @($candidates | Select-Object -Unique)
 
   foreach ($candidate in $candidates) {
     & $candidate -c "import torch, ultralytics, fastapi, uvicorn, onnxruntime, cv2" 2>$null

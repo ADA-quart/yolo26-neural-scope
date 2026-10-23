@@ -121,6 +121,7 @@ export type Stats = {
   probe_age?: number | null;
   best?: BestInfo | null;
   held?: boolean;
+  runtime?: "tensorrt" | "pytorch";
 };
 
 export type GalleryItem = {
@@ -154,6 +155,8 @@ export type ModelInfo = {
   embedder: string;
   match_threshold: number;
   probe_interval: number;
+  runtime?: string;
+  engine?: string | null;
   meta: LayerMeta[];
 };
 
@@ -172,6 +175,7 @@ export type LiveMsg = {
     probe_ms: number | null;
     fps: number;
     probed: boolean;
+    runtime?: "tensorrt" | "pytorch";
   };
 };
 

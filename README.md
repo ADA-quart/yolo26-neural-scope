@@ -274,6 +274,20 @@ pip install -r requirements.txt
 
 `requirements.txt` 里的 `torch==2.6.0+cu124` / `torchvision==0.21.0+cu124` 是本机验证的 CUDA 12.4 组合。如果你用 CPU 或别的 CUDA 版本，先按 <https://pytorch.org/get-started/locally/> 安装匹配的 torch/torchvision，再安装其余依赖。
 
+### 可选：TensorRT 加速
+
+TensorRT 只接管**非探针帧**的前向；每 1.7 s 的探针帧仍走 PyTorch，所以右屏的特征图、卷积窗和决策头依旧是真实激活值。引擎缺失、TensorRT 未安装或执行异常时会自动回退 PyTorch；左屏底栏和右屏遥测会标出当前实际后端（`TensorRT` / `PyTorch`，前向耗时后显示 `TRT` / `PT`）。
+
+```bash
+pip install --extra-index-url https://pypi.nvidia.com tensorrt_cu12_libs==10.4.0 tensorrt_cu12_bindings==10.4.0
+python backend/build_engine.py
+```
+
+- **引擎必须按 GPU 重建**，不能跨显卡复制。文件名包含 GPU 型号、TensorRT 版本和权重哈希，保存在 `state/trt/`（已被 `.gitignore` 排除）。首次安装 TensorRT 约需下载 1.1 GB。
+- FP32 引擎构建约 2–3 分钟；FP16 在 V100 上实测约 8–9 分钟，而且不会更快，所以 V100 用 FP32。默认按显卡选精度：图灵（RTX 20 系，sm_75）及更早用 FP32，Ampere（sm_80）及以后用 FP16。可用 `--fp32` / `--half` 强制，`--force` 重新导出 ONNX 并覆盖引擎。
+- TensorRT 10.4 是最后一个支持 V100（Volta）的版本。RTX 4060 Laptop（Ada，sm_89）用同一套命令即可，默认构建 FP16 引擎；该机型未参与本仓库实机验证。
+- 更换权重后需要重新构建；删除 `state/trt/` 即可回到纯 PyTorch。
+
 ### 启动
 
 - **Windows 一键**：`.\start.bat`（会检测前端构建、启动后端、打开双窗）。
@@ -325,6 +339,8 @@ yolo26-neural-scope/
 │  ├─ app.py            FastAPI：REST、WebSocket、静态前端
 │  ├─ engine.py         单推理线程：视频源、检测、跟踪、最佳帧
 │  ├─ probes.py         forward hook：23 张层图、决策头、7 组卷积显微镜
+│  ├─ trt_runtime.py    TensorRT 快路径：引擎发现、反序列化、异步执行
+│  ├─ build_engine.py   按当前 GPU 导出 ONNX 并构建 TensorRT 引擎
 │  ├─ identity.py       EdgeFace 512D 嵌入、人脸对齐、本地画廊
 │  └─ tracker.py        IoU 人脸跟踪器
 ├─ frontend/
@@ -348,8 +364,9 @@ yolo26-neural-scope/
 
 本机验证环境：Windows 11、Tesla V100 16GB、CUDA 12.4、PyTorch 2.6.0+cu124、ultralytics 8.4.48。
 
-- 实时检测循环约 **7–9 FPS**（640×640，含跟踪与身份嵌入）。
-- 一次完整探针约 **200 ms**，每 **1.7 s** 一次。
+- 同一段 1080×1920 / 60 fps 视频，端到端约 **13.0 FPS**（PyTorch）→ **22.5 FPS**（TensorRT FP32）；单次前向中位数 41.2 ms → 10.6 ms。
+- 只换推理后端时，端到端上限约 **29 FPS**，其余开销来自视频解码、540×960 JPEG 编码和身份识别。
+- 一次完整探针约 **120–135 ms**，每 **1.7 s** 一次；探针帧固定走 PyTorch。
 - 右屏层图 128×128、卷积取景窗 168×168，均用 JPEG 传输，避免 WebSocket 被大图拖慢。
 - 显存占用很低；瓶颈主要在探针的多次张量操作和 JPEG 编码，而不是模型本身。
 - CPU 可以跑，但推理会明显变慢；探针节奏不变，实时画面可能出现等待。

@@ -389,14 +389,14 @@ export default function NeuralScreen() {
               </div>
               <div className="n-kv">
                 <div><span>画面帧率</span><b className="mono">{stats?.fps?.toFixed(1) ?? "--"} <em>FPS</em></b></div>
-                <div><span>单次前向</span><b className="mono">{stats?.infer_ms?.toFixed(1) ?? "--"} <em>ms</em></b></div>
+                <div><span>单次前向</span><b className="mono">{stats?.infer_ms?.toFixed(1) ?? "--"} <em>ms · {stats?.runtime === "tensorrt" ? "TRT" : "PT"}</em></b></div>
                 <div><span>完整探针</span><b className="mono">{stats?.probe_ms?.toFixed(0) ?? "--"} <em>ms</em></b></div>
                 <div><span>显存占用</span><b className="mono">{stats?.gpu_mem_mb != null ? `${num(stats.gpu_mem_mb)} MB` : "--"}</b></div>
                 <div><span>模型参数</span><b className="mono">{model ? `${(model.params / 1_000_000).toFixed(2)} M` : "--"}</b></div>
                 <div><span>识别后端</span><b className="mono n-kv-small">{model?.embedder ?? "--"}</b></div>
               </div>
               <div className="n-telemetry-foot mono">
-                <Zap size={11} /> {model?.gpu?.replace("Tesla ", "") ?? "GPU"} · {model?.device?.toUpperCase() ?? "--"} · CUDA {model?.cuda ?? "--"}
+                <Zap size={11} /> {model?.gpu?.replace("Tesla ", "") ?? "GPU"} · {model?.device?.toUpperCase() ?? "--"} · CUDA {model?.cuda ?? "--"} · {model?.runtime ?? "PyTorch"}
               </div>
             </section>
           </aside>

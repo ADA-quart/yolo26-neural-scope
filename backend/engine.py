@@ -11,11 +11,13 @@ from typing import Any, Callable
 import cv2
 import numpy as np
 import torch
+import torch.nn.functional as F
 from ultralytics import YOLO
 
 from identity import FaceEmbedder, FaceGallery, align_face_from_pose, face_box_from_pose
 from probes import ProbeTaps
 from tracker import FaceTrack, FaceTracker
+from trt_runtime import TensorRTRunner, find_engine
 
 ROOT = Path(__file__).resolve().parents[1]
 IMG_SIZE = 640
@@ -23,6 +25,7 @@ PERSON_CONF = 0.25
 MATCH_THRESHOLD = 0.45
 PROBE_INTERVAL = 1.7
 DISPLAY_WIDTH = 960
+DISPLAY_HEIGHT = 960
 
 DEMO_SCENES: dict[str, dict[str, Any]] = {
     "closeup": {"start": 418, "end": 522, "label": "示例视频 · 双人近景"},
@@ -56,11 +59,23 @@ class Engine:
     def __init__(self, emit: Callable[[dict[str, Any]], None] | None = None):
         self.emit = emit or (lambda _msg: None)
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        if self.device.type == "cuda":
+            # 每帧只有很小的 CPU 预处理，16 线程池会在帧间空转抢满 CPU。
+            torch.set_num_threads(2)
+            cv2.setNumThreads(2)
 
         weights = ROOT / "weights" / "yolo26n-pose.pt"
         self.yolo = YOLO(str(weights))
         self.torch_model = self.yolo.model.to(self.device).eval()
+        # 融合 Conv+BN 并丢弃推理用不到的 one2many 分支，前向约快 35%。
+        self.torch_model.fuse()
         self.taps = ProbeTaps(self.torch_model, self.device, input_size=IMG_SIZE)
+
+        self.trt: TensorRTRunner | None = None
+        self._runtime_label = "PyTorch"
+        self._engine_name: str | None = None
+        self._last_runtime = "pytorch"
+        self._init_trt(weights)
 
         self.embedder = FaceEmbedder(ROOT / "weights" / "edgeface_s_gamma_05.onnx")
         self.gallery = FaceGallery(ROOT / "state", self.embedder)
@@ -128,8 +143,38 @@ class Engine:
             "embedder": "EdgeFace-S 512D",
             "match_threshold": MATCH_THRESHOLD,
             "probe_interval": PROBE_INTERVAL,
+            "runtime": self._runtime_label,
+            "engine": self._engine_name,
         }
         self.layer_meta = self.taps.meta
+
+    def _init_trt(self, weights: Path) -> None:
+        if self.device.type != "cuda":
+            return
+        try:
+            found = find_engine(weights)
+            if found is None:
+                return
+            path, precision = found
+            runner = TensorRTRunner(path)
+        except Exception as exc:
+            print(f"[trt] 跳过 TensorRT：{exc}", flush=True)
+            return
+        self.trt = runner
+        self._engine_name = path.name
+        self._runtime_label = f"TensorRT {runner.trt_version} · {precision.upper()}"
+        print(f"[trt] 快路径已启用：{path.name}", flush=True)
+
+    def _disable_trt(self, exc: Exception) -> None:
+        name = self._engine_name or "TensorRT"
+        self.trt = None
+        self._engine_name = None
+        self._runtime_label = "PyTorch"
+        self._last_runtime = "pytorch"
+        self._state_dirty = True
+        message = f"{name} 运行失败，已回退 PyTorch：{exc}"
+        self._last_error = message
+        self.emit({"type": "error", "message": message})
 
     # ---------- lifecycle ----------
 
@@ -261,6 +306,7 @@ class Engine:
             "probe_age": round(now - self._last_probe_at, 1) if self._last_probe_at else None,
             "best": self._best_info(),
             "held": self._held is not None,
+            "runtime": self._last_runtime,
         }
 
     # ---------- worker ----------
@@ -513,7 +559,7 @@ class Engine:
     @staticmethod
     def _read_fps(cap: cv2.VideoCapture) -> float:
         fps = float(cap.get(cv2.CAP_PROP_FPS) or 0.0)
-        if not 1.0 <= fps <= 60.0:
+        if not 1.0 <= fps <= 240.0:
             fps = 15.0
         return fps
 
@@ -522,16 +568,11 @@ class Engine:
     def _process(self, frame: np.ndarray) -> None:
         t0 = time.perf_counter()
         height, width = frame.shape[:2]
-        square = cv2.resize(frame, (IMG_SIZE, IMG_SIZE), interpolation=cv2.INTER_LINEAR)
-        rgb = cv2.cvtColor(square, cv2.COLOR_BGR2RGB)
-        tensor = (
-            torch.from_numpy(rgb)
-            .permute(2, 0, 1)
-            .contiguous()
-            .float()
-            .div(255.0)
-            .unsqueeze(0)
-            .to(self.device)
+        tensor = torch.from_numpy(frame).to(self.device, non_blocking=True)
+        tensor = tensor.permute(2, 0, 1).unsqueeze(0).contiguous().float().div_(255.0)
+        tensor = tensor[:, [2, 1, 0]]
+        tensor = F.interpolate(
+            tensor, size=(IMG_SIZE, IMG_SIZE), mode="bilinear", align_corners=False
         )
 
         now = time.monotonic()
@@ -551,9 +592,24 @@ class Engine:
             self.taps.begin_probe(roi)
             probe_started = time.perf_counter()
 
-        with torch.inference_mode():
-            output = self.torch_model(tensor)
-        raw = output[0] if isinstance(output, (list, tuple)) else output
+        use_torch = want_probe or self.trt is None
+        try:
+            if use_torch:
+                with torch.inference_mode():
+                    output = self.torch_model(tensor)
+                raw = output[0] if isinstance(output, (list, tuple)) else output
+                self._last_runtime = "pytorch"
+            else:
+                raw = self.trt.run(tensor)
+                self._last_runtime = "tensorrt"
+        except Exception as exc:
+            if use_torch:
+                raise
+            self._disable_trt(exc)
+            with torch.inference_mode():
+                output = self.torch_model(tensor)
+            raw = output[0] if isinstance(output, (list, tuple)) else output
+            self._last_runtime = "pytorch"
         raw_np = raw[0].float().cpu().numpy()
         self._infer_ms = (time.perf_counter() - t0) * 1000.0
 
@@ -614,6 +670,7 @@ class Engine:
                 "probe_ms": round(self._probe_ms, 1) if want_probe else None,
                 "fps": self.stats_payload()["fps"],
                 "probed": want_probe,
+                "runtime": self._last_runtime,
             },
         }
         self.latest_live = live
@@ -776,10 +833,15 @@ class Engine:
 
     def _encode_frame(self, frame: np.ndarray) -> dict[str, Any]:
         height, width = frame.shape[:2]
+        # 竖屏视频只按宽度缩会得到 960×1707，JPEG 和传输成本都会翻倍。
+        scale = min(1.0, DISPLAY_WIDTH / width, DISPLAY_HEIGHT / height)
         display = frame
-        if width > DISPLAY_WIDTH:
-            ratio = DISPLAY_WIDTH / float(width)
-            display = cv2.resize(frame, (DISPLAY_WIDTH, int(round(height * ratio))), interpolation=cv2.INTER_AREA)
+        if scale < 1.0:
+            display = cv2.resize(
+                frame,
+                (max(1, int(round(width * scale))), max(1, int(round(height * scale)))),
+                interpolation=cv2.INTER_AREA,
+            )
         ok, buffer = cv2.imencode(".jpg", display, [int(cv2.IMWRITE_JPEG_QUALITY), 80])
         encoded = base64.b64encode(buffer.tobytes()).decode("ascii") if ok else ""
         out_h, out_w = display.shape[:2]
