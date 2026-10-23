@@ -34,8 +34,10 @@ The full teaching notes, classroom experiments and license details are in the
 - **Neural window (`/neural`)** — 23 real intermediate feature maps, seven
   convolution microscopes (layers `0, 1, 3, 5, 7, 17, 20`), and the
   YOLO26n-Pose head (`[1, 300, 57]`).
-- **Same-forward binding** — a deep probe runs every 1.7 s; the input frame,
-  feature maps, convolution viewfinder and head all carry the same `seq`.
+- **Same-forward binding** — a deep probe runs continuously in the background,
+  taking the next frame as soon as one full forward finishes (~60–100 ms); the
+  input frame, feature maps, convolution viewfinder and head all carry the same
+  `seq`.
 - **Best-frame hold** — press `H` to freeze the highest-confidence probe of the
   currently tracked face in both windows, inspect layer by layer, then press
   `H` again to resume.
@@ -110,9 +112,12 @@ Key ideas:
   3×3 kernel slides over nine positions (stride 2); the UI shows the nine
   multiply-accumulate sums. The cyan window in the viewfinder is the actual
   3×3 receptive field on the **input** channel, not the output map.
-- The right window is a deep probe every 1.7 s, not a per-frame view. That is a
-  deliberate engineering trade-off: 23 maps + 7 microscopes + JPEG encoding
-  are expensive. The left window keeps running at video rate.
+- The right window is a continuously running deep probe, not a per-frame view.
+  The worker starts the next frame as soon as one full forward finishes (about
+  10–18 probes/s on the test machine). That is a deliberate engineering
+  trade-off: 23 maps + 7 microscopes + JPEG encoding are expensive, so the
+  probe is limited by its own forward time, not by an arbitrary interval. The
+  left window keeps running at video rate.
 
 ## Related work
 

@@ -46,6 +46,16 @@ export function clamp(value: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, value));
 }
 
+export function continuousProbe(interval?: number | null, continuous?: boolean): boolean {
+  if (continuous !== undefined) return continuous;
+  return interval !== undefined && interval !== null && interval <= 0;
+}
+
+export function probeCadence(interval?: number | null, continuous?: boolean): string {
+  if (continuousProbe(interval, continuous)) return "探针连续";
+  return `探针每 ${(interval ?? 0.6).toFixed(1)}s`;
+}
+
 export async function api<T = unknown>(path: string, init?: RequestInit): Promise<T> {
   const response = await fetch(path, {
     ...init,

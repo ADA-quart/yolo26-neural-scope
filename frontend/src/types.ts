@@ -155,6 +155,7 @@ export type ModelInfo = {
   embedder: string;
   match_threshold: number;
   probe_interval: number;
+  probe_continuous?: boolean;
   runtime?: string;
   engine?: string | null;
   meta: LayerMeta[];

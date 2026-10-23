@@ -19,7 +19,7 @@ import { Brand, ConnectionPill } from "../components/Brand";
 import { ThemeToggle } from "../components/ThemeToggle";
 import { Toasts } from "../components/Toasts";
 import { useFeed } from "../hooks/useFeed";
-import { openWindow, pct } from "../lib/utils";
+import { continuousProbe, openWindow, pct } from "../lib/utils";
 import { STATIONS, STATION_COLORS } from "../types";
 
 const fadeUp = {
@@ -288,7 +288,12 @@ export default function Launcher() {
           <span className="tech-item"><Cpu size={13} /> YOLO26n-Pose · {model?.params ? `${(model.params / 1e6).toFixed(1)}M` : "3.7M"} params</span>
           <span className="tech-item"><ScanFace size={13} /> EdgeFace-S · 512D</span>
           <span className="tech-item"><Layers3 size={13} /> {model?.cuda ? `CUDA ${model.cuda}` : "PyTorch"}</span>
-          <span className="tech-item"><Network size={13} /> {model?.probe_interval ?? 1.7}s 探针刷新</span>
+          <span className="tech-item">
+            <Network size={13} />{" "}
+            {continuousProbe(model?.probe_interval, model?.probe_continuous)
+              ? "连续探针刷新"
+              : `${model?.probe_interval ?? 0.6}s 探针刷新`}
+          </span>
           <span className="tech-note">全部推理在本机完成</span>
         </section>
       </main>

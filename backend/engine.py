@@ -23,7 +23,10 @@ ROOT = Path(__file__).resolve().parents[1]
 IMG_SIZE = 640
 PERSON_CONF = 0.25
 MATCH_THRESHOLD = 0.45
-PROBE_INTERVAL = 1.7
+# 0 表示后台探针完成即接下一帧；单次前向约 60-100ms，因此实际受算力限流。
+PROBE_INTERVAL = 0.0
+# 没有后台探针线程时退回内联探针，必须留出间隔，否则会拖垮实时帧率。
+PROBE_FALLBACK_INTERVAL = 0.3
 DISPLAY_WIDTH = 960
 DISPLAY_HEIGHT = 960
 
@@ -31,6 +34,19 @@ DEMO_SCENES: dict[str, dict[str, Any]] = {
     "closeup": {"start": 418, "end": 522, "label": "示例视频 · 双人近景"},
     "multi": {"start": 660, "end": 840, "label": "示例视频 · 三人街景"},
 }
+
+
+@dataclass
+class ProbeRequest:
+    generation: int
+    seq: int
+    t: float
+    tensor: torch.Tensor
+    roi: tuple[float, float, float, float] | None
+    live: dict[str, Any]
+    face: dict[str, Any] | None
+    selected_id: int | None
+    ready: torch.cuda.Event
 
 
 @dataclass
@@ -75,6 +91,13 @@ class Engine:
         self._runtime_label = "PyTorch"
         self._engine_name: str | None = None
         self._last_runtime = "pytorch"
+        self._probe_async = False
+        self._probe_thread: threading.Thread | None = None
+        self._probe_requests: queue.Queue[ProbeRequest | None] = queue.Queue(maxsize=1)
+        self._probe_stop = threading.Event()
+        self._probe_generation = 0
+        self._probe_stream: torch.cuda.Stream | None = None
+        self._probe_lock = threading.RLock()
         self._init_trt(weights)
 
         self.embedder = FaceEmbedder(ROOT / "weights" / "edgeface_s_gamma_05.onnx")
@@ -142,7 +165,8 @@ class Engine:
             "weights": weights.name,
             "embedder": "EdgeFace-S 512D",
             "match_threshold": MATCH_THRESHOLD,
-            "probe_interval": PROBE_INTERVAL,
+            "probe_interval": PROBE_INTERVAL if self._probe_async else PROBE_FALLBACK_INTERVAL,
+            "probe_continuous": self._probe_async and PROBE_INTERVAL <= 0.0,
             "runtime": self._runtime_label,
             "engine": self._engine_name,
         }
@@ -164,8 +188,136 @@ class Engine:
         self._engine_name = path.name
         self._runtime_label = f"TensorRT {runner.trt_version} · {precision.upper()}"
         print(f"[trt] 快路径已启用：{path.name}", flush=True)
+        self._start_probe_worker()
+
+    def _start_probe_worker(self) -> None:
+        if self.trt is None or self.device.type != "cuda":
+            return
+        try:
+            self._probe_stream = torch.cuda.Stream(device=self.device)
+            self._probe_stop.clear()
+            self._probe_async = True
+            self._probe_thread = threading.Thread(
+                target=self._probe_loop, name="yolo-probe", daemon=True
+            )
+            self._probe_thread.start()
+        except Exception as exc:
+            print(f"[probe] 后台探针未启用：{exc}", flush=True)
+            self._probe_async = False
+
+    def _shutdown_probe_worker(self) -> None:
+        self._probe_async = False
+        self._probe_generation += 1
+        thread = self._probe_thread
+        self._probe_thread = None
+        while True:
+            try:
+                self._probe_requests.get_nowait()
+            except queue.Empty:
+                break
+        if thread is None:
+            return
+        self._probe_stop.set()
+        try:
+            self._probe_requests.put_nowait(None)
+        except queue.Full:
+            pass
+        thread.join(timeout=5.0)
+
+    def _probe_loop(self) -> None:
+        while not self._probe_stop.is_set():
+            try:
+                request = self._probe_requests.get(timeout=0.25)
+            except queue.Empty:
+                continue
+            if request is None:
+                break
+            if request.generation != self._probe_generation:
+                continue
+            try:
+                self._run_probe(request)
+            except Exception as exc:
+                self.taps.capture_maps = False
+                self.taps.capture_micro = False
+                self.taps._pending_maps.clear()
+                self.taps._pending_head = None
+                self.taps._micro.clear()
+                self.emit({"type": "error", "message": f"探针失败：{exc}"})
+
+    def _run_probe(self, request: ProbeRequest) -> None:
+        stream = self._probe_stream
+        if stream is None:
+            return
+        with torch.cuda.stream(stream):
+            request.ready.wait(stream)
+            self.taps.begin_probe(request.roi)
+            started = time.perf_counter()
+            with torch.inference_mode():
+                self.torch_model(request.tensor)
+            result = self.taps.finish_probe()
+            took_ms = (time.perf_counter() - started) * 1000.0
+        payload = {
+            "type": "probe",
+            "seq": request.seq,
+            "t": request.t,
+            "maps": result["maps"],
+            "micro": result["micro"],
+            "head": result["head"],
+            "roi": request.roi,
+            "took_ms": round(took_ms, 1),
+            "frame": request.live.get("frame"),
+            "faces": request.live.get("faces") or [],
+            "face": request.face,
+        }
+        with self._probe_lock:
+            if request.generation != self._probe_generation or self._held is not None:
+                return
+            self._probe_ms = took_ms
+            self._consider_best(request.live, payload, request.selected_id)
+            self.latest_probe = payload
+            self._state_dirty = True
+            self.emit(payload)
+
+    def _submit_probe(
+        self,
+        tensor: torch.Tensor,
+        roi: tuple[float, float, float, float] | None,
+        live: dict[str, Any],
+        now: float,
+    ) -> None:
+        if not self._probe_async or self._probe_stream is None:
+            return
+        try:
+            ready = torch.cuda.Event()
+            ready.record(torch.cuda.current_stream(self.device))
+            request = ProbeRequest(
+                generation=self._probe_generation,
+                seq=int(live["seq"]),
+                t=float(live["t"]),
+                tensor=tensor,
+                roi=roi,
+                live=live,
+                face=self._selected_brief(),
+                selected_id=self._selected_id,
+                ready=ready,
+            )
+            try:
+                self._probe_requests.put_nowait(request)
+            except queue.Full:
+                try:
+                    self._probe_requests.get_nowait()
+                except queue.Empty:
+                    pass
+                try:
+                    self._probe_requests.put_nowait(request)
+                except queue.Full:
+                    pass
+            self._last_probe_at = now
+        except Exception as exc:
+            print(f"[probe] 提交失败：{exc}", flush=True)
 
     def _disable_trt(self, exc: Exception) -> None:
+        self._shutdown_probe_worker()
         name = self._engine_name or "TensorRT"
         self.trt = None
         self._engine_name = None
@@ -189,6 +341,7 @@ class Engine:
         self._stop.set()
         if self.thread:
             self.thread.join(timeout=3)
+        self._shutdown_probe_worker()
         if self._cap is not None:
             self._cap.release()
             self._cap = None
@@ -208,7 +361,9 @@ class Engine:
         self.submit({"type": "step"})
 
     def request_hold(self) -> dict[str, Any]:
-        if self._best is None:
+        with self._probe_lock:
+            has_best = self._best is not None
+        if not has_best:
             return {"ok": False, "error": "还没有捕捉到带人脸的帧，稍等再试"}
         self.submit({"type": "hold"})
         return {"ok": True, "best": self._best_info()}
@@ -272,19 +427,23 @@ class Engine:
         }
 
     def _best_info(self) -> dict[str, Any] | None:
-        if self._best is None:
+        with self._probe_lock:
+            best = self._best
+        if best is None:
             return None
         return {
-            "seq": self._best["seq"],
-            "face_conf": self._best["face_conf"],
-            "face_id": self._best["face_id"],
-            "t": self._best["t"],
+            "seq": best["seq"],
+            "face_conf": best["face_conf"],
+            "face_id": best["face_id"],
+            "t": best["t"],
         }
 
     def _hold_info(self) -> dict[str, Any] | None:
-        if self._held is None:
+        with self._probe_lock:
+            held = self._held
+        if held is None:
             return None
-        return {**self._held, "active": True}
+        return {**held, "active": True}
 
     def stats_payload(self) -> dict[str, Any]:
         now = time.monotonic()
@@ -360,12 +519,13 @@ class Engine:
                 self.emit({"type": "status", **self.stats_payload()})
                 last_status = time.monotonic()
 
-            delay = self._next_due - now
-            if delay > 0:
-                self._stop.wait(min(delay, 0.25))
-            self._next_due += 1.0 / self._src_fps
-            if self._next_due < now - 0.4:
-                self._next_due = now
+            if self._src_fps > 0:
+                delay = self._next_due - now
+                if delay > 0:
+                    self._stop.wait(min(delay, 0.25))
+                self._next_due += 1.0 / self._src_fps
+                if self._next_due < now - 0.4:
+                    self._next_due = now
         if self._cap is not None:
             self._cap.release()
             self._cap = None
@@ -403,6 +563,12 @@ class Engine:
                 self._state_dirty = True
 
     def _switch_source(self, cmd: dict[str, Any]) -> None:
+        self._probe_generation += 1
+        while True:
+            try:
+                self._probe_requests.get_nowait()
+            except queue.Empty:
+                break
         kind = str(cmd.get("kind") or "demo")
         value = str(cmd.get("value") or "")
         label = cmd.get("label") or None
@@ -442,7 +608,8 @@ class Engine:
             self._cap.release()
         self._cap = cap
         self.source = spec
-        self._src_fps = self._read_fps(cap)
+        # 摄像头/流的读取本身就是节奏；DSHOW 常把 FPS 报成 0，再回退 15 会把 30fps 砍半。
+        self._src_fps = 0.0 if kind in ("webcam", "stream") else self._read_fps(cap)
         self._next_due = 0.0
         self._last_error = ""
         self.tracker.clear()
@@ -462,30 +629,38 @@ class Engine:
         self.emit({"type": "toast", "message": f"已切换来源：{spec.label}"})
         self._state_dirty = True
 
-    def _consider_best(self, live: dict[str, Any], probe: dict[str, Any]) -> None:
+    def _consider_best(
+        self,
+        live: dict[str, Any],
+        probe: dict[str, Any],
+        selected_id: int | None = None,
+    ) -> None:
         faces = probe.get("faces") or []
         if not faces:
             return
+        wanted = self._selected_id if selected_id is None else selected_id
         # Keep the best tied to the selected face so the HUD, ROI and microscope agree.
-        star = next((face for face in faces if face.get("id") == self._selected_id), None)
+        star = next((face for face in faces if face.get("id") == wanted), None)
         if star is None:
             return
         conf = float(star.get("face_conf") or 0.0)
         if conf <= 0.0:
             return
-        if self._best is not None and conf <= self._best["face_conf"] + 1e-4:
-            return
-        self._best = {
-            "live": live,
-            "probe": probe,
-            "face_id": int(star["id"]),
-            "face_conf": round(conf, 4),
-            "seq": int(probe["seq"]),
-            "t": float(probe["t"]),
-        }
+        with self._probe_lock:
+            if self._best is not None and conf <= self._best["face_conf"] + 1e-4:
+                return
+            self._best = {
+                "live": live,
+                "probe": probe,
+                "face_id": int(star["id"]),
+                "face_conf": round(conf, 4),
+                "seq": int(probe["seq"]),
+                "t": float(probe["t"]),
+            }
 
     def _hold_best(self) -> None:
-        best = self._best
+        with self._probe_lock:
+            best = self._best
         if best is None:
             self.emit({"type": "error", "message": "还没有捕捉到带人脸的帧，稍等再试"})
             return
@@ -518,7 +693,8 @@ class Engine:
                 else best["probe"].get("face")
             ),
         }
-        self._held = info
+        with self._probe_lock:
+            self._held = info
         self._paused = True
         self._step_once = False
         self._selected_id = face_id
@@ -538,7 +714,7 @@ class Engine:
         if spec.start:
             cap.set(cv2.CAP_PROP_POS_FRAMES, spec.start)
         self._cap = cap
-        self._src_fps = self._read_fps(cap)
+        self._src_fps = 0.0 if spec.kind in ("webcam", "stream") else self._read_fps(cap)
 
     @staticmethod
     def _open_capture(spec: SourceSpec) -> cv2.VideoCapture | None:
@@ -586,26 +762,40 @@ class Engine:
                 float(np.clip(box[2] / width, 0, 1)),
                 float(np.clip(box[3] / height, 0, 1)),
             )
-        want_probe = (now - self._last_probe_at) >= PROBE_INTERVAL
+        probe_worker_ready = (
+            self._probe_async
+            and self.trt is not None
+            and self._probe_thread is not None
+            and self._probe_thread.is_alive()
+        )
+        probe_interval = PROBE_INTERVAL if probe_worker_ready else PROBE_FALLBACK_INTERVAL
+        want_probe = (now - self._last_probe_at) >= probe_interval
+        async_probe = want_probe and probe_worker_ready
+        # 没有 TensorRT 时探针必须和实时帧共用同一次 PyTorch 前向，只能内联。
+        probe_inline = want_probe and not async_probe
         probe_started = 0.0
-        if want_probe:
+        if probe_inline:
             self.taps.begin_probe(roi)
             probe_started = time.perf_counter()
 
-        use_torch = want_probe or self.trt is None
+        use_trt = self.trt is not None and not probe_inline
         try:
-            if use_torch:
+            if use_trt:
+                raw = self.trt.run(tensor)
+                self._last_runtime = "tensorrt"
+            else:
                 with torch.inference_mode():
                     output = self.torch_model(tensor)
                 raw = output[0] if isinstance(output, (list, tuple)) else output
                 self._last_runtime = "pytorch"
-            else:
-                raw = self.trt.run(tensor)
-                self._last_runtime = "tensorrt"
         except Exception as exc:
-            if use_torch:
+            if not use_trt:
                 raise
             self._disable_trt(exc)
+            probe_inline = want_probe
+            if probe_inline:
+                self.taps.begin_probe(roi)
+                probe_started = time.perf_counter()
             with torch.inference_mode():
                 output = self.torch_model(tensor)
             raw = output[0] if isinstance(output, (list, tuple)) else output
@@ -614,7 +804,7 @@ class Engine:
         self._infer_ms = (time.perf_counter() - t0) * 1000.0
 
         probe_payload = None
-        if want_probe:
+        if probe_inline:
             probe = self.taps.finish_probe()
             self._probe_ms = (time.perf_counter() - probe_started) * 1000.0
             self._last_probe_at = now
@@ -667,7 +857,7 @@ class Engine:
             "source": self.source.public(),
             "stats": {
                 "infer_ms": round(self._infer_ms, 1),
-                "probe_ms": round(self._probe_ms, 1) if want_probe else None,
+                "probe_ms": round(self._probe_ms, 1) if probe_inline else None,
                 "fps": self.stats_payload()["fps"],
                 "probed": want_probe,
                 "runtime": self._last_runtime,
@@ -683,9 +873,11 @@ class Engine:
                 faces=faces,
                 face=self._selected_brief(),
             )
-            self._consider_best(live, probe_payload)
+            self._consider_best(live, probe_payload, self._selected_id)
             self.latest_probe = probe_payload
             self.emit(probe_payload)
+        elif want_probe and async_probe:
+            self._submit_probe(tensor, roi, live, now)
 
         if self._frame_no % 3 == 0:
             head_live = self.taps._head_payload(raw_np)

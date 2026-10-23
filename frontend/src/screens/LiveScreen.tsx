@@ -30,7 +30,7 @@ import { Sparkline } from "../components/Sparkline";
 import { ThemeToggle } from "../components/ThemeToggle";
 import { Toasts } from "../components/Toasts";
 import { useFeed } from "../hooks/useFeed";
-import { api, num, pct, simLabel } from "../lib/utils";
+import { api, continuousProbe, num, pct, simLabel } from "../lib/utils";
 import type { FaceInfo, GalleryItem } from "../types";
 
 const FACE_KEYS = [0, 1, 2, 3, 4];
@@ -540,7 +540,12 @@ export default function LiveScreen() {
         </div>
         <div className="footer-metrics">
           <span><Cpu size={11} /> {model?.device?.toUpperCase() ?? "—"} · {stats?.gpu_mem_mb ? `${num(stats.gpu_mem_mb)} MB` : "本机推理"}</span>
-          <span><Activity size={11} /> 探针每 {model?.probe_interval ?? 1.7}s</span>
+          <span>
+            <Activity size={11} />{" "}
+            {continuousProbe(model?.probe_interval, model?.probe_continuous)
+              ? `探针连续 · ${stats?.probe_ms?.toFixed(0) ?? "--"} ms/次`
+              : `探针每 ${model?.probe_interval ?? 0.6}s`}
+          </span>
           <span className="footer-note">画面只在本机处理，不上传云端</span>
         </div>
       </footer>

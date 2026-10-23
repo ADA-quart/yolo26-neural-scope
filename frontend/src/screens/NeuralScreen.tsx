@@ -29,7 +29,7 @@ import { StationBar } from "../components/neural/StationBar";
 import { ThemeToggle } from "../components/ThemeToggle";
 import { Toasts } from "../components/Toasts";
 import { useFeed } from "../hooks/useFeed";
-import { api, clamp, num, pct } from "../lib/utils";
+import { api, clamp, continuousProbe, num, pct, probeCadence } from "../lib/utils";
 import { STATION_COLORS, STATIONS } from "../types";
 import type { HoldInfo, MapEntry, MicroData, ProbeMsg } from "../types";
 
@@ -86,6 +86,7 @@ export default function NeuralScreen() {
   const [lastProbe, setLastProbe] = useState<ProbeMsg | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
   const seenProbe = useRef(-1);
+  const lastFlashAt = useRef(0);
   const holdRef = useRef(false);
   const sourceKey = live ? `${live.source.kind}:${live.source.value}:${live.source.start}:${live.source.end}` : null;
   const lastSourceKey = useRef<string | null>(null);
@@ -98,13 +99,15 @@ export default function NeuralScreen() {
   const paused = state?.paused ?? false;
   const hold = state?.hold ?? null;
   const best = stats?.best ?? null;
+  const probingContinuously = continuousProbe(model?.probe_interval, model?.probe_continuous);
   holdRef.current = !!hold;
-  const inputFrame = lastProbe?.frame ?? live?.frame;
-  const inputFaces = lastProbe?.faces ?? live?.faces ?? [];
+  const analysisFrame = lastProbe?.frame ?? live?.frame;
+  const previewFrame = live?.frame ?? lastProbe?.frame;
+  const previewFaces = live?.faces ?? lastProbe?.faces ?? [];
   const selected =
-    inputFaces.find((face) => face.selected) ??
-    inputFaces.find((face) => face.id === (lastProbe?.face?.id ?? live?.selected ?? state?.selected)) ??
-    inputFaces[0] ??
+    previewFaces.find((face) => face.selected) ??
+    previewFaces.find((face) => face.id === (live?.selected ?? lastProbe?.face?.id ?? state?.selected)) ??
+    previewFaces[0] ??
     null;
   const identity = selected?.identity;
   const note = TYPE_NOTES[layer?.type ?? "Conv"] ?? TYPE_NOTES.Conv;
@@ -136,7 +139,11 @@ export default function NeuralScreen() {
     if (!probe || probe.seq === seenProbe.current) return;
     seenProbe.current = probe.seq;
     setLastProbe(probe);
-    setRefreshKey((value) => value + 1);
+    const now = Date.now();
+    if (now - lastFlashAt.current >= 900) {
+      lastFlashAt.current = now;
+      setRefreshKey((value) => value + 1);
+    }
     setMaps((prev) => {
       const next = { ...prev };
       for (const entry of probe.maps) next[entry.i] = entry;
@@ -235,7 +242,7 @@ export default function NeuralScreen() {
   }, [move, toggleHold]);
 
   const tint = STATION_TINT[station] ?? "cyan";
-  const ratio = inputFrame ? `${inputFrame.w} / ${inputFrame.h}` : "16 / 9";
+  const ratio = previewFrame ? `${previewFrame.w} / ${previewFrame.h}` : "16 / 9";
   const identityName = identity?.status === "pending" ? "识别中…" : identity?.name ?? "未注册";
 
   return (
@@ -302,17 +309,23 @@ export default function NeuralScreen() {
           <aside className="n-col n-col-left">
             <section className="panel n-input-card">
               <div className="panel-head">
-                <div className="panel-title"><ScanFace size={15} /> 产生特征图的输入帧</div>
-                <span className="panel-kicker">{hold ? "HELD BEST · 单帧" : "SAME PROBE · 同帧"}</span>
+                <div className="panel-title"><ScanFace size={15} /> 实时取景</div>
+                <span className="panel-kicker">
+                  {hold
+                    ? "HELD BEST · 单帧"
+                    : forwardSeq != null
+                      ? `LIVE PREVIEW · 分析帧 #${forwardSeq}`
+                      : "LIVE PREVIEW"}
+                </span>
               </div>
               <div className="n-input" data-probe-seq={forwardSeq ?? ""} data-held={hold ? "1" : "0"} data-hold-seq={hold?.seq ?? ""} style={{ aspectRatio: ratio }}>
-                {inputFrame?.jpeg ? (
-                  <img src={`data:image/jpeg;base64,${inputFrame.jpeg}`} alt="产生特征图的网络输入帧" draggable={false} />
+                {previewFrame?.jpeg ? (
+                  <img src={`data:image/jpeg;base64,${previewFrame.jpeg}`} alt="实时取景画面" draggable={false} />
                 ) : (
                   <div className="n-input-empty"><ScanFace size={30} /><span>等待实时画面…</span></div>
                 )}
                 <div className="scanline" />
-                {inputFaces.map((face) => (
+                {previewFaces.map((face) => (
                   <span
                     key={face.id}
                     className={`n-face ${face.id === selected?.id ? "sel" : ""}`}
@@ -348,15 +361,17 @@ export default function NeuralScreen() {
                 )}
               </div>
               <div className="n-input-meta">
-                <span className="mono">{inputFrame ? `${inputFrame.w}×${inputFrame.h}` : "--"}</span>
+                <span className="mono">{previewFrame ? `${previewFrame.w}×${previewFrame.h}` : "--"}</span>
                 <span className="mono">{forwardSeq != null ? `PROBE #${forwardSeq}` : "等待探针"}</span>
-                <span className="mono">{hold ? "已定格" : lastProbe ? "同帧" : "LIVE"}</span>
+                <span className="mono">{hold ? "已定格" : "实时"}</span>
                 <span className="n-input-source">{live?.source.label ?? state?.source.label ?? "--"}</span>
               </div>
               <p className="n-input-note">
                 {hold
                   ? `这一帧是按最高人脸置信度挑出的最佳现场，推理已暂停；左边的层图、右边的取景窗和决策头仍是同一次前向，可以逐层慢慢看。按 H 或右上角按钮继续实时。`
-                  : "探针把整帧缩成 640×640 做一次前向；层图、卷积和决策头都来自这一帧，人脸框只决定放大哪里。"}
+                  : probingContinuously
+                    ? "取景窗跟随视频源实时刷新；后台探针完成一次完整前向后立刻接下一帧，层图和决策头因此几乎跟着画面走，并且始终来自同一次前向。"
+                    : `取景窗跟随视频源实时刷新；层图和决策头来自最近一次探针——每 ${model?.probe_interval ?? 0.6} 秒抓取一帧做完整前向，所以分析结果比画面慢一步，但彼此严格同帧。`}
               </p>
             </section>
 
@@ -444,7 +459,7 @@ export default function NeuralScreen() {
                 transition={{ duration: 0.18 }}
               >
                 {focus === 23 ? (
-                  <HeadPanel full head={head} frame={inputFrame} seq={forwardSeq} />
+                  <HeadPanel full head={head} frame={analysisFrame} seq={forwardSeq} />
                 ) : (
                   <>
                     <div className="n-map-wrap" data-probe-seq={forwardSeq ?? ""}>
@@ -523,7 +538,7 @@ export default function NeuralScreen() {
                 <div className="panel-title"><BrainCircuit size={15} /> 决策头 · 这一帧的答案</div>
                 <button className="btn btn-mini" onClick={() => pickLayer(23)}>展开决策头</button>
               </div>
-              <HeadPanel head={head} frame={inputFrame} seq={forwardSeq} />
+              <HeadPanel head={head} frame={analysisFrame} seq={forwardSeq} />
             </section>
 
             <section className="panel n-why-card">
@@ -578,7 +593,8 @@ export default function NeuralScreen() {
               hold={hold}
               mapCount={mapCount}
               microCount={microCount}
-              interval={model?.probe_interval ?? 1.7}
+              interval={model?.probe_interval ?? 0.6}
+              continuous={probingContinuously}
             />
           </aside>
         </div>
@@ -602,13 +618,16 @@ export default function NeuralScreen() {
           <span><b>MAPS</b> {mapCount}/23 · 卷积显微镜 {microCount}</span>
         </div>
         <div className="footer-metrics">
-          <span><Timer size={11} /> 探针每 {model?.probe_interval ?? 1.7}s</span>
+          <span>
+            <Timer size={11} /> {probeCadence(model?.probe_interval, model?.probe_continuous)}
+            {probingContinuously ? ` · ${lastProbe?.took_ms.toFixed(0) ?? "--"} ms/次` : ""}
+          </span>
           <span><Activity size={11} /> SPACE 导览 · ←/→ 换层 · 1–4 站点 · H 最佳帧 · E 模式 · F 全屏</span>
           <span className="footer-note">
             {hold
               ? `最佳帧 #${hold.seq} · 置信度 ${pct(hold.face_conf)} · 推理已暂停`
               : lastProbe
-                ? "输入帧、23 张层图与决策头来自同一次真实前向"
+                ? "取景窗实时刷新 · 23 张层图与决策头同帧"
                 : "等待第一次完整探针"}
           </span>
         </div>
@@ -626,6 +645,7 @@ function ProbeStatus({
   mapCount,
   microCount,
   interval,
+  continuous,
 }: {
   probe: ProbeMsg | null;
   paused: boolean;
@@ -633,6 +653,7 @@ function ProbeStatus({
   mapCount: number;
   microCount: number;
   interval: number;
+  continuous: boolean;
 }) {
   const [now, setNow] = useState(() => Date.now() / 1000);
 
@@ -644,7 +665,7 @@ function ProbeStatus({
   const anchor = hold?.t ?? probe?.t ?? null;
   const age = anchor != null ? Math.max(0, now - anchor) : null;
   const ageText = age == null ? "--" : age < 60 ? `${age.toFixed(1)}s` : `${Math.floor(age / 60)}m${Math.round(age % 60)}s`;
-  const progress = hold ? 0 : age == null ? 0 : clamp(age / interval, 0, 1);
+  const progress = hold || continuous ? 0 : age == null ? 0 : clamp(age / interval, 0, 1);
 
   return (
     <section className={`panel n-probe-card ${hold ? "held" : ""}`}>
@@ -662,7 +683,9 @@ function ProbeStatus({
       <p>
         {hold
           ? `已冻结在置信度 ${pct(hold.face_conf)} 的最佳现场。层图、卷积取景窗和决策头都属于这一帧，可以继续逐层检查；按 H 或右上角按钮恢复实时。`
-          : `每 ${interval.toFixed(1)} 秒挑一帧做完整探针：这一帧的输入图、层图和决策头会一起更新；左侧观察窗仍按实时帧率播放。`}
+          : continuous
+            ? `探针连续运行：单次完整前向约 ${probe?.took_ms.toFixed(0) ?? "--"} ms，完成即接下一帧；这一帧的输入图、层图和决策头一起更新，左侧观察窗仍按实时帧率播放。`
+            : `每 ${interval.toFixed(1)} 秒挑一帧做完整探针：这一帧的输入图、层图和决策头会一起更新；左侧观察窗仍按实时帧率播放。`}
       </p>
     </section>
   );

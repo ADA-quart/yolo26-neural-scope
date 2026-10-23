@@ -1,7 +1,8 @@
 import { BrainCircuit, Crosshair } from "lucide-react";
+import { memo } from "react";
 import type { FrameInfo, HeadData } from "../../types";
 
-export function HeadPanel({
+export const HeadPanel = memo(function HeadPanel({
   head,
   frame,
   seq,
@@ -138,4 +139,4 @@ export function HeadPanel({
       )}
     </div>
   );
-}
+});

@@ -1,9 +1,9 @@
 import { ScanLine } from "lucide-react";
-import type { CSSProperties } from "react";
+import { memo, type CSSProperties } from "react";
 import { pct } from "../../lib/utils";
 import type { MapEntry } from "../../types";
 
-export function FeatureMap({
+export const FeatureMap = memo(function FeatureMap({
   entry,
   badge,
   className = "",
@@ -40,4 +40,4 @@ export function FeatureMap({
       {entry?.shape && <span className="fm-shape mono">{entry.shape.slice(1).join("×")}</span>}
     </div>
   );
-}
+});

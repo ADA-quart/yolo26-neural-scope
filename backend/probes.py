@@ -342,20 +342,38 @@ class ProbeTaps:
     def finish_probe(self) -> dict[str, Any]:
         self.capture_maps = False
         self.capture_micro = False
+        pending = [
+            (index, self._pending_maps[index])
+            for index in range(self.layer_count)
+            if index in self._pending_maps
+        ]
+        images: dict[int, np.ndarray] = {}
+        shapes: dict[int, list[int]] = {}
+        if pending:
+            try:
+                # 23 张小图一起归一化再拷回 CPU，省掉逐图同步。
+                stack = torch.stack([small.float() for _, (small, _) in pending])
+                low = stack.amin(dim=(2, 3), keepdim=True)
+                high = stack.amax(dim=(2, 3), keepdim=True)
+                stack = (stack - low) / (high - low + 1e-6)
+                stack = torch.pow(stack.clamp_(0, 1), 0.85)
+                batch = (stack * 255).to(torch.uint8).cpu().numpy()
+                for row, (index, (_, shape)) in zip(batch, pending):
+                    images[index] = row
+                    shapes[index] = shape
+            except Exception:
+                images.clear()
+                shapes.clear()
+                pending = []
+
         maps: list[dict[str, Any]] = []
         for index in range(self.layer_count):
             entry: dict[str, Any] = {"i": index, "map": None}
-            pending = self._pending_maps.get(index)
-            if pending is not None:
-                small, shape = pending
+            image = images.get(index)
+            if image is not None:
                 try:
-                    raw = small.detach().cpu().numpy().astype(np.float32)
-                    minimum = raw.min(axis=(1, 2), keepdims=True)
-                    maximum = raw.max(axis=(1, 2), keepdims=True)
-                    raw = (raw - minimum) / (maximum - minimum + 1e-6)
-                    raw = np.power(np.clip(raw, 0, 1), 0.85)
-                    image = (raw * 255).astype(np.uint8).transpose(1, 2, 0)
-                    entry["activity"] = round(float(image.astype(np.float32).mean()) / 255.0, 4)
+                    image = image.transpose(1, 2, 0)
+                    entry["activity"] = round(float(image.mean()) / 255.0, 4)
                     rgb = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
                     ok, buffer = cv2.imencode(
                         ".jpg", rgb, [int(cv2.IMWRITE_JPEG_QUALITY), 68]
@@ -364,7 +382,7 @@ class ProbeTaps:
                         entry["map"] = base64.b64encode(buffer.tobytes()).decode("ascii")
                 except Exception:
                     entry["map"] = None
-                entry["shape"] = shape
+                entry["shape"] = shapes[index]
             maps.append(entry)
 
         head = self._head_payload(self._pending_head)
