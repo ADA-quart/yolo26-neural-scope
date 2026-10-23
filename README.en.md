@@ -42,7 +42,8 @@ The full teaching notes, classroom experiments and license details are in the
   currently tracked face in both windows, inspect layer by layer, then press
   `H` again to resume.
 - **Real sources** — demo clip, uploaded video (up to 500 MB), webcam (opened
-  on the backend machine), or an RTSP/HTTP stream.
+  on the backend machine, mirrored like a selfie camera before inference so
+  boxes, keypoints and maps stay aligned), or an RTSP/HTTP stream.
 - **Two themes** — night and a high-contrast daylight theme for projectors and
   classrooms.
 

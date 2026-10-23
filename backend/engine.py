@@ -505,6 +505,10 @@ class Engine:
                 self._stop.wait(0.2)
                 continue
 
+            if self.source.kind == "webcam":
+                # 摄像头按镜子方向显示；在推理前翻转，框、关键点、层图和探针仍严格同帧对齐。
+                frame = cv2.flip(frame, 1)
+
             self._step_once = False
             try:
                 self._process(frame)
